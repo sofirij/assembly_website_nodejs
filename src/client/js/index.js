@@ -2,6 +2,7 @@ require('../css/styles.css');
 const {basicSetup} = require('codemirror');
 const {EditorState} = require('@codemirror/state');
 const {EditorView, keymap} = require('@codemirror/view');
+const {simulateTab, displayBinaryCode, clearBinaryView} = require('./codeEditor.js');
 
 // State for assembly code container
 let assemblyState = EditorState.create({
@@ -30,7 +31,6 @@ const assembleButton = document.getElementById('assemble-button');
 
 assembleButton.addEventListener('click', async () => {
     // clear the binary view
-    
     clearBinaryView(binaryView);
 
     // send a request to the server to assemble the code to binary
@@ -52,33 +52,3 @@ assembleButton.addEventListener('click', async () => {
     displayBinaryCode(binaryView, binaryCode);
 });
 
-// Simulate the 4 space indent by a Tab key press
-function simulateTab(view) {
-    const {state, dispatch} = view;
-    const pos = state.selection.main.head;
-
-    const transaction = state.update({
-        changes: {from: pos, insert: '    '},
-        selection: {anchor: pos + 4}
-    });
-
-    dispatch(transaction);
-
-    return true;
-}
-
-// Display the binary code in the binary view
-function displayBinaryCode(view, binaryCode) {
-    let cursorPos = view.state.selection.main.head;
-    
-    view.dispatch({
-        changes: {from: cursorPos, insert: binaryCode}
-    });
-}
-
-// Clear the binary view
-function clearBinaryView(view) {
-    view.dispatch({
-        changes: {from: 0, to: view.state.doc.length, insert: ''}
-    });
-}

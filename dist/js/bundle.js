@@ -28011,6 +28011,47 @@ __webpack_require__.r(__webpack_exports__);
 // extracted by mini-css-extract-plugin
 
 
+/***/ }),
+
+/***/ "./src/client/js/codeEditor.js":
+/*!*************************************!*\
+  !*** ./src/client/js/codeEditor.js ***!
+  \*************************************/
+/***/ ((module) => {
+
+// Simulate the 4 space indent by a Tab key press
+function simulateTab(view) {
+    const {state, dispatch} = view;
+    const pos = state.selection.main.head;
+
+    const transaction = state.update({
+        changes: {from: pos, insert: '    '},
+        selection: {anchor: pos + 4}
+    });
+
+    dispatch(transaction);
+
+    return true;
+}
+
+// Display the binary code in the binary view
+function displayBinaryCode(view, binaryCode) {
+    let cursorPos = view.state.selection.main.head;
+    
+    view.dispatch({
+        changes: {from: cursorPos, insert: binaryCode}
+    });
+}
+
+// Clear the binary view
+function clearBinaryView(view) {
+    view.dispatch({
+        changes: {from: 0, to: view.state.doc.length, insert: ''}
+    });
+}
+
+module.exports = {simulateTab, displayBinaryCode, clearBinaryView};
+
 /***/ })
 
 /******/ 	});
@@ -28062,6 +28103,7 @@ __webpack_require__(/*! ../css/styles.css */ "./src/client/css/styles.css");
 const {basicSetup} = __webpack_require__(/*! codemirror */ "./node_modules/codemirror/dist/index.cjs");
 const {EditorState} = __webpack_require__(/*! @codemirror/state */ "./node_modules/@codemirror/state/dist/index.cjs");
 const {EditorView, keymap} = __webpack_require__(/*! @codemirror/view */ "./node_modules/@codemirror/view/dist/index.cjs");
+const {simulateTab, displayBinaryCode, clearBinaryView} = __webpack_require__(/*! ./codeEditor.js */ "./src/client/js/codeEditor.js");
 
 // State for assembly code container
 let assemblyState = EditorState.create({
@@ -28090,7 +28132,6 @@ const assembleButton = document.getElementById('assemble-button');
 
 assembleButton.addEventListener('click', async () => {
     // clear the binary view
-    
     clearBinaryView(binaryView);
 
     // send a request to the server to assemble the code to binary
@@ -28112,36 +28153,7 @@ assembleButton.addEventListener('click', async () => {
     displayBinaryCode(binaryView, binaryCode);
 });
 
-// Simulate the 4 space indent by a Tab key press
-function simulateTab(view) {
-    const {state, dispatch} = view;
-    const pos = state.selection.main.head;
 
-    const transaction = state.update({
-        changes: {from: pos, insert: '    '},
-        selection: {anchor: pos + 4}
-    });
-
-    dispatch(transaction);
-
-    return true;
-}
-
-// Display the binary code in the binary view
-function displayBinaryCode(view, binaryCode) {
-    let cursorPos = view.state.selection.main.head;
-    
-    view.dispatch({
-        changes: {from: cursorPos, insert: binaryCode}
-    });
-}
-
-// Clear the binary view
-function clearBinaryView(view) {
-    view.dispatch({
-        changes: {from: 0, to: view.state.doc.length, insert: ''}
-    });
-}
 })();
 
 /******/ })()
