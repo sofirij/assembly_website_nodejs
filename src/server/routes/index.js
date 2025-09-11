@@ -16,10 +16,19 @@ router.route('/')
         child.stdin.write(assemblyCode);
         child.stdin.end();
 
+        let binaryCode = '';
+
         child.stdout.on('data', (data) => {
-            const binaryCode = data.toString();
+            binaryCode += data.toString();
+        });
+
+        child.stdout.on('end', () => {
             res.json({binaryCode: binaryCode});
-        })
+        });
+
+        child.on('error', (err) => {
+            res.status(500).json({ error: err.message });
+        });
     });
 
 module.exports = router;
