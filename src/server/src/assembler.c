@@ -330,11 +330,16 @@ int read_hexadecimal(char* buffer) {
 }
 
 /*
-    Process a line of tokens according to the opcode or assember direcitive
+    Process a line of tokens according to the opcode or assember directive
 */
 void process_tokens(int *pc, char** line, Hashmap* label_map, Hashmap* opcode_map) {
     
     int index = 1;
+
+    // check if the token starts with a comment
+    if (atoi(line[0]) >= 2 && line[1][0] == '#')  {
+        return;
+    }
 
     // check if token is a label
     if (get(label_map, line[index]) != -1) {
