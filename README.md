@@ -84,5 +84,5 @@ webpack.config.js      # Webpack configuration
 - Syntax Checking
 - Syntax Highlighting
 - Containerization (with Docker)
-- Request authentication
+- Rate limiting
 - Serving the backend on the web
