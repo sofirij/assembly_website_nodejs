@@ -14,10 +14,16 @@
     "@codemirror/commands": "^6.8.1",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.2",
+    "bcrypt": "^6.0.0",
+    "body-parser": "^2.2.0",
     "child_process": "^1.0.2",
     "codemirror": "^6.0.2",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "mini-css-extract-plugin": "^2.9.4"
+    "jsonwebtoken": "^9.0.2",
+    "mini-css-extract-plugin": "^2.9.4",
+    "moo": "^0.5.2",
+    "nearley": "^2.20.1"
   },
   "devDependencies": {
     "css-loader": "^7.1.2",

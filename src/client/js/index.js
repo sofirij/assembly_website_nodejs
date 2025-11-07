@@ -3,11 +3,22 @@ const {basicSetup} = require('codemirror');
 const {EditorState} = require('@codemirror/state');
 const {EditorView, keymap} = require('@codemirror/view');
 const {simulateTab, displayBinaryCode, clearBinaryView} = require('./codeEditor.js');
+const {highlightField} = require('./highlightField.js');
+
+
+const opcodes = ["add", "and", "br", "brn", "brz", "brp", "brnz", "brnp", "brzp", "brnzp", "ld", "ldi", "ldr", "lea", "not", "st", "sti", "str", "trap", "halt", "ret", "rti", "jmp", "jsr", "jsrr", "getc", "out", "puts", "in"];
+const assemblerDirectives = [".orig", ".end", ".fill", ".blkw", ".stringz"];
+
 
 // State for assembly code container
 let assemblyState = EditorState.create({
     doc: '',
-    extensions: [basicSetup, EditorView.lineWrapping, keymap.of({key: 'Tab', run: simulateTab})]
+    extensions: [
+        basicSetup,
+        EditorView.lineWrapping,
+        keymap.of({key: 'Tab', run: simulateTab}),
+        highlightField
+    ]
 });
 
 let assemblyView = new EditorView({
@@ -17,7 +28,6 @@ let assemblyView = new EditorView({
 
 // State for binary code container
 let binaryState = EditorState.create({
-    doc: '',
     extensions: [basicSetup, EditorView.lineWrapping, EditorView.editable.of(false)]
 });
 
@@ -47,7 +57,6 @@ assembleButton.addEventListener('click', async () => {
     const result = await response.json();
     const binaryCode = result.binaryCode.trim();
 
-    console.log(binaryCode);
 
     displayBinaryCode(binaryView, binaryCode);
 });

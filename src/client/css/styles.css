@@ -11,8 +11,9 @@
     display: flex;
     margin: 0 auto;
     height: 70%;
-    border: 1px solid black;
+    border:2px solid black;
     width: 40%;
+    border-radius: 1%;
 }
 
 .assemble-button-container {
@@ -25,9 +26,52 @@
     justify-content: center;
 }
 
+.assembly-button {
+    border-radius: 10%;
+    background-color: white;
+}
+
 .cm-editor {
   outline: none !important;
   width: 100%;
 }
 
+.commentHighlight {
+    color: #7F848E;
+}
 
+
+.opcodeHighlight {
+    color: #FF6347;
+}
+
+.operandHighlight {
+    color: orange;
+}
+
+.labelHighlight {
+    color: #FFD700;
+}
+
+.labelOperandHighlight {
+    color: #D19A66;
+}
+
+.registerHighlight {
+    color: #61AFEF;
+}
+
+.constantHighlight {
+    color: #98C379;
+}
+
+.errorHighlight {
+    text-decoration: underline;
+    text-decoration-color: #FF3333;
+    text-decoration-thickness: 0.5px;
+    text-underline-offset: 0.25em;
+}
+
+.directiveHighlight {
+    color: #C678DD;
+}
