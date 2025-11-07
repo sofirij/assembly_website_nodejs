@@ -58,11 +58,14 @@ const highlightField = StateField.define({
 
         //print each line of the codemirror
         if (tr.docChanged) {
+            const uniqueAffectedLines = new Set();
 
             tr.changes.iterChanges((from, to, fromA, toA, inserted) => {
                 const startLineNew = tr.state.doc.lineAt(fromA).number;
                 const endLineNew = tr.state.doc.lineAt(toA).number;
                 console.log(`Line ${startLineNew} to ${endLineNew}\n`);
+                uniqueAffectedLines.add(startLineNew);
+                uniqueAffectedLines.add(endLineNew);
 
                 for (let pos = startLineNew; pos <= endLineNew; pos++) {
                     const line = tr.state.doc.line(pos);
@@ -98,43 +101,77 @@ const highlightField = StateField.define({
                             case 'putsOpcode':
                             case 'inOpcode':
                             case 'putspOpcode':
-                            case 'haltOpcode':
-                                newDecos.push(opcodeHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                            case 'haltOpcode': {
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                newDecos.push(opcodeHighlight.range(start, end));
                                 break;
+                            }   
                             case 'endDirective':
                             case 'origDirective':
                             case 'fillDirective':
                             case 'blkwDirective':
-                            case 'stringzDirective':
-                                newDecos.push(directiveHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                            case 'stringzDirective':{
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                newDecos.push(directiveHighlight.range(start, end));
                                 break;
-                            case 'register':
-                                newDecos.push(registerHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                            }   
+                            case 'register':{
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                newDecos.push(registerHighlight.range(start, end));
                                 break;
+                            }   
                             case 'decimal':
                             case 'binary':
                             case 'hexadecimal':
                             case 'fillCharacter':
-                            case 'stringzSequence':
-                                newDecos.push(constantHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                            case 'stringzSequence':{
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                newDecos.push(constantHighlight.range(start, end));
                                 break;
-                            case 'label':
+                            }   
+                            case 'label':{
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
                                 if (canBeLabel) {
-                                    newDecos.push(labelHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                                    newDecos.push(labelHighlight.range(start, end));
                                 } else {
-                                    newDecos.push(labelOperandHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                                    newDecos.push(labelOperandHighlight.range(start, end));
                                 }
                                 break;
-                            case 'comment':
-                                newDecos.push(commentHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                            }   
+                            case 'comment':{
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                newDecos.push(commentHighlight.range(start, end));
                                 break;
+                            }   
                         }
                         canBeLabel = false;
                     }
                 }
             });
+
+            let filterFrom = Infinity;
+            let filterTo = -Infinity;
+
+            for (const pos of uniqueAffectedLines) {
+                const line = tr.state.doc.line(pos);
+                filterFrom = Math.min(filterFrom, line.from);
+                filterTo = Math.max(filterTo, line.to);
+            }
             
             return deco.update({
+                filter: (from, to) => to <= filterFrom || from >= filterTo,
                 add: newDecos,
                 sort: true
             });

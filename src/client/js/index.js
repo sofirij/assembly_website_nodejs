@@ -9,6 +9,27 @@ const {highlightField} = require('./highlightField.js');
 const opcodes = ["add", "and", "br", "brn", "brz", "brp", "brnz", "brnp", "brzp", "brnzp", "ld", "ldi", "ldr", "lea", "not", "st", "sti", "str", "trap", "halt", "ret", "rti", "jmp", "jsr", "jsrr", "getc", "out", "puts", "in"];
 const assemblerDirectives = [".orig", ".end", ".fill", ".blkw", ".stringz"];
 
+// Define your chosen cursor color
+const cursorColor = "#FFD700"; // Gold/Yellow
+
+const myCursorTheme = EditorView.baseTheme({
+  // The caret-color property targets the blinking text cursor
+  "&.cm-focused .cm-content": {
+    "caret-color": cursorColor
+  },
+  
+  // Optional: Also change the color of the *selection* range (the block/line highlight)
+  ".cm-selectionBackground": {
+    // This color should be related to your dark background but slightly different
+    backgroundColor: "rgba(100, 100, 100, 0.4)" 
+  },
+  
+  // Optional: Also change the color of the *block* cursor (when focused)
+  // This targets the block cursor that appears when the selection is collapsed/empty.
+  ".cm-cursor, .cm-dropCursor": {
+    borderLeftColor: cursorColor
+  }
+});
 
 // State for assembly code container
 let assemblyState = EditorState.create({
@@ -17,7 +38,8 @@ let assemblyState = EditorState.create({
         basicSetup,
         EditorView.lineWrapping,
         keymap.of({key: 'Tab', run: simulateTab}),
-        highlightField
+        highlightField,
+        myCursorTheme
     ]
 });
 
