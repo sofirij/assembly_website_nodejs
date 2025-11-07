@@ -59,76 +59,85 @@ const highlightField = StateField.define({
         //print each line of the codemirror
         if (tr.docChanged) {
 
-            for (let pos = 1; pos <= tr.state.doc.lines; pos++) {
-                const line = tr.state.doc.line(pos);
-                const lineText = line.text.toLowerCase();
-                const lineStart = line.from;
-                let canBeLabel = true;
+            tr.changes.iterChanges((from, to, fromA, toA, inserted) => {
+                const startLineNew = tr.state.doc.lineAt(fromA).number;
+                const endLineNew = tr.state.doc.lineAt(toA).number;
+                console.log(`Line ${startLineNew} to ${endLineNew}\n`);
 
-                console.log(lineText);
-                
-                lexer.reset(lineText);
+                for (let pos = startLineNew; pos <= endLineNew; pos++) {
+                    const line = tr.state.doc.line(pos);
+                    const lineText = line.text.toLowerCase();
+                    const lineStart = line.from;
+                    let canBeLabel = true;
 
-                while ((token = lexer.next())) {
-                    if (token.type === 'error') {
-                        console.log(`Lexer error on line ${pos}, column${token.col}\n`);
-                        console.log(`Unmatched text: '${token.text}'\n`);
-                        newDecos.push(errorHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
-                        continue;
+                    console.log(lineText);
+                    
+                    lexer.reset(lineText);
+
+                    while ((token = lexer.next())) {
+                        if (token.type === 'error') {
+                            console.log(`Lexer error on line ${pos}, column${token.col}\n`);
+                            console.log(`Unmatched text: '${token.text}'\n`);
+                            newDecos.push(errorHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                            continue;
+                        }
+
+                        switch(token.type) {
+                            case 'addAndOpcode':
+                            case 'brOpcode':
+                            case 'jmpOpcode':
+                            case 'retOpcode':
+                            case 'jssrOpcode':
+                            case 'jsrOpcode':
+                            case 'ldrStrOpcode':
+                            case 'ldLdiStStiLeaOpcode':
+                            case 'notOpcode':
+                            case 'trapOpcode':
+                            case 'getcOpcode':
+                            case 'outOpcode':
+                            case 'putsOpcode':
+                            case 'inOpcode':
+                            case 'putspOpcode':
+                            case 'haltOpcode':
+                                newDecos.push(opcodeHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                                break;
+                            case 'endDirective':
+                            case 'origDirective':
+                            case 'fillDirective':
+                            case 'blkwDirective':
+                            case 'stringzDirective':
+                                newDecos.push(directiveHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                                break;
+                            case 'register':
+                                newDecos.push(registerHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                                break;
+                            case 'decimal':
+                            case 'binary':
+                            case 'hexadecimal':
+                            case 'fillCharacter':
+                            case 'stringzSequence':
+                                newDecos.push(constantHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                                break;
+                            case 'label':
+                                if (canBeLabel) {
+                                    newDecos.push(labelHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                                } else {
+                                    newDecos.push(labelOperandHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                                }
+                                break;
+                            case 'comment':
+                                newDecos.push(commentHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                                break;
+                        }
+                        canBeLabel = false;
                     }
-
-                    switch(token.type) {
-                        case 'addAndOpcode':
-                        case 'brOpcode':
-                        case 'jmpOpcode':
-                        case 'retOpcode':
-                        case 'jssrOpcode':
-                        case 'jsrOpcode':
-                        case 'ldrStrOpcode':
-                        case 'ldLdiStStiLeaOpcode':
-                        case 'notOpcode':
-                        case 'trapOpcode':
-                        case 'getcOpcode':
-                        case 'outOpcode':
-                        case 'putsOpcode':
-                        case 'inOpcode':
-                        case 'putspOpcode':
-                        case 'haltOpcode':
-                            newDecos.push(opcodeHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
-                            break;
-                        case 'endDirective':
-                        case 'origDirective':
-                        case 'fillDirective':
-                        case 'blkwDirective':
-                        case 'stringzDirective':
-                            newDecos.push(directiveHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
-                            break;
-                        case 'register':
-                            newDecos.push(registerHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
-                            break;
-                        case 'decimal':
-                        case 'binary':
-                        case 'hexadecimal':
-                        case 'fillCharacter':
-                        case 'stringzSequence':
-                            newDecos.push(constantHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
-                            break;
-                        case 'label':
-                            if (canBeLabel) {
-                                newDecos.push(labelHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
-                            } else {
-                                newDecos.push(labelOperandHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
-                            }
-                            break;
-                        case 'comment':
-                            newDecos.push(commentHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
-                            break;
-                    }
-                    canBeLabel = false;
                 }
-            }
-
-            return Decoration.set(newDecos);
+            });
+            
+            return deco.update({
+                add: newDecos,
+                sort: true
+            });
         }
 
         return deco;
