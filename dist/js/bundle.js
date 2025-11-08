@@ -27687,6 +27687,658 @@ module.exports = crelt;
 
 /***/ }),
 
+/***/ "./node_modules/moo/moo.js":
+/*!*********************************!*\
+  !*** ./node_modules/moo/moo.js ***!
+  \*********************************/
+/***/ (function(module, exports) {
+
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;(function(root, factory) {
+  if (true) {
+    !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
+		__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+		(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),
+		__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__)) /* global define */
+  } else // removed by dead control flow
+{}
+}(this, function() {
+  'use strict';
+
+  var hasOwnProperty = Object.prototype.hasOwnProperty
+  var toString = Object.prototype.toString
+  var hasSticky = typeof new RegExp().sticky === 'boolean'
+
+  /***************************************************************************/
+
+  function isRegExp(o) { return o && toString.call(o) === '[object RegExp]' }
+  function isObject(o) { return o && typeof o === 'object' && !isRegExp(o) && !Array.isArray(o) }
+
+  function reEscape(s) {
+    return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+  }
+  function reGroups(s) {
+    var re = new RegExp('|' + s)
+    return re.exec('').length - 1
+  }
+  function reCapture(s) {
+    return '(' + s + ')'
+  }
+  function reUnion(regexps) {
+    if (!regexps.length) return '(?!)'
+    var source =  regexps.map(function(s) {
+      return "(?:" + s + ")"
+    }).join('|')
+    return "(?:" + source + ")"
+  }
+
+  function regexpOrLiteral(obj) {
+    if (typeof obj === 'string') {
+      return '(?:' + reEscape(obj) + ')'
+
+    } else if (isRegExp(obj)) {
+      // TODO: consider /u support
+      if (obj.ignoreCase) throw new Error('RegExp /i flag not allowed')
+      if (obj.global) throw new Error('RegExp /g flag is implied')
+      if (obj.sticky) throw new Error('RegExp /y flag is implied')
+      if (obj.multiline) throw new Error('RegExp /m flag is implied')
+      return obj.source
+
+    } else {
+      throw new Error('Not a pattern: ' + obj)
+    }
+  }
+
+  function pad(s, length) {
+    if (s.length > length) {
+      return s
+    }
+    return Array(length - s.length + 1).join(" ") + s
+  }
+
+  function lastNLines(string, numLines) {
+    var position = string.length
+    var lineBreaks = 0;
+    while (true) {
+      var idx = string.lastIndexOf("\n", position - 1)
+      if (idx === -1) {
+        break;
+      } else {
+        lineBreaks++
+      }
+      position = idx
+      if (lineBreaks === numLines) {
+        break;
+      }
+      if (position === 0) {
+        break;
+      }
+    }
+    var startPosition = 
+      lineBreaks < numLines ?
+      0 : 
+      position + 1
+    return string.substring(startPosition).split("\n")
+  }
+
+  function objectToRules(object) {
+    var keys = Object.getOwnPropertyNames(object)
+    var result = []
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i]
+      var thing = object[key]
+      var rules = [].concat(thing)
+      if (key === 'include') {
+        for (var j = 0; j < rules.length; j++) {
+          result.push({include: rules[j]})
+        }
+        continue
+      }
+      var match = []
+      rules.forEach(function(rule) {
+        if (isObject(rule)) {
+          if (match.length) result.push(ruleOptions(key, match))
+          result.push(ruleOptions(key, rule))
+          match = []
+        } else {
+          match.push(rule)
+        }
+      })
+      if (match.length) result.push(ruleOptions(key, match))
+    }
+    return result
+  }
+
+  function arrayToRules(array) {
+    var result = []
+    for (var i = 0; i < array.length; i++) {
+      var obj = array[i]
+      if (obj.include) {
+        var include = [].concat(obj.include)
+        for (var j = 0; j < include.length; j++) {
+          result.push({include: include[j]})
+        }
+        continue
+      }
+      if (!obj.type) {
+        throw new Error('Rule has no type: ' + JSON.stringify(obj))
+      }
+      result.push(ruleOptions(obj.type, obj))
+    }
+    return result
+  }
+
+  function ruleOptions(type, obj) {
+    if (!isObject(obj)) {
+      obj = { match: obj }
+    }
+    if (obj.include) {
+      throw new Error('Matching rules cannot also include states')
+    }
+
+    // nb. error and fallback imply lineBreaks
+    var options = {
+      defaultType: type,
+      lineBreaks: !!obj.error || !!obj.fallback,
+      pop: false,
+      next: null,
+      push: null,
+      error: false,
+      fallback: false,
+      value: null,
+      type: null,
+      shouldThrow: false,
+    }
+
+    // Avoid Object.assign(), so we support IE9+
+    for (var key in obj) {
+      if (hasOwnProperty.call(obj, key)) {
+        options[key] = obj[key]
+      }
+    }
+
+    // type transform cannot be a string
+    if (typeof options.type === 'string' && type !== options.type) {
+      throw new Error("Type transform cannot be a string (type '" + options.type + "' for token '" + type + "')")
+    }
+
+    // convert to array
+    var match = options.match
+    options.match = Array.isArray(match) ? match : match ? [match] : []
+    options.match.sort(function(a, b) {
+      return isRegExp(a) && isRegExp(b) ? 0
+           : isRegExp(b) ? -1 : isRegExp(a) ? +1 : b.length - a.length
+    })
+    return options
+  }
+
+  function toRules(spec) {
+    return Array.isArray(spec) ? arrayToRules(spec) : objectToRules(spec)
+  }
+
+  var defaultErrorRule = ruleOptions('error', {lineBreaks: true, shouldThrow: true})
+  function compileRules(rules, hasStates) {
+    var errorRule = null
+    var fast = Object.create(null)
+    var fastAllowed = true
+    var unicodeFlag = null
+    var groups = []
+    var parts = []
+
+    // If there is a fallback rule, then disable fast matching
+    for (var i = 0; i < rules.length; i++) {
+      if (rules[i].fallback) {
+        fastAllowed = false
+      }
+    }
+
+    for (var i = 0; i < rules.length; i++) {
+      var options = rules[i]
+
+      if (options.include) {
+        // all valid inclusions are removed by states() preprocessor
+        throw new Error('Inheritance is not allowed in stateless lexers')
+      }
+
+      if (options.error || options.fallback) {
+        // errorRule can only be set once
+        if (errorRule) {
+          if (!options.fallback === !errorRule.fallback) {
+            throw new Error("Multiple " + (options.fallback ? "fallback" : "error") + " rules not allowed (for token '" + options.defaultType + "')")
+          } else {
+            throw new Error("fallback and error are mutually exclusive (for token '" + options.defaultType + "')")
+          }
+        }
+        errorRule = options
+      }
+
+      var match = options.match.slice()
+      if (fastAllowed) {
+        while (match.length && typeof match[0] === 'string' && match[0].length === 1) {
+          var word = match.shift()
+          fast[word.charCodeAt(0)] = options
+        }
+      }
+
+      // Warn about inappropriate state-switching options
+      if (options.pop || options.push || options.next) {
+        if (!hasStates) {
+          throw new Error("State-switching options are not allowed in stateless lexers (for token '" + options.defaultType + "')")
+        }
+        if (options.fallback) {
+          throw new Error("State-switching options are not allowed on fallback tokens (for token '" + options.defaultType + "')")
+        }
+      }
+
+      // Only rules with a .match are included in the RegExp
+      if (match.length === 0) {
+        continue
+      }
+      fastAllowed = false
+
+      groups.push(options)
+
+      // Check unicode flag is used everywhere or nowhere
+      for (var j = 0; j < match.length; j++) {
+        var obj = match[j]
+        if (!isRegExp(obj)) {
+          continue
+        }
+
+        if (unicodeFlag === null) {
+          unicodeFlag = obj.unicode
+        } else if (unicodeFlag !== obj.unicode && options.fallback === false) {
+          throw new Error('If one rule is /u then all must be')
+        }
+      }
+
+      // convert to RegExp
+      var pat = reUnion(match.map(regexpOrLiteral))
+
+      // validate
+      var regexp = new RegExp(pat)
+      if (regexp.test("")) {
+        throw new Error("RegExp matches empty string: " + regexp)
+      }
+      var groupCount = reGroups(pat)
+      if (groupCount > 0) {
+        throw new Error("RegExp has capture groups: " + regexp + "\nUse (?: … ) instead")
+      }
+
+      // try and detect rules matching newlines
+      if (!options.lineBreaks && regexp.test('\n')) {
+        throw new Error('Rule should declare lineBreaks: ' + regexp)
+      }
+
+      // store regex
+      parts.push(reCapture(pat))
+    }
+
+
+    // If there's no fallback rule, use the sticky flag so we only look for
+    // matches at the current index.
+    //
+    // If we don't support the sticky flag, then fake it using an irrefutable
+    // match (i.e. an empty pattern).
+    var fallbackRule = errorRule && errorRule.fallback
+    var flags = hasSticky && !fallbackRule ? 'ym' : 'gm'
+    var suffix = hasSticky || fallbackRule ? '' : '|'
+
+    if (unicodeFlag === true) flags += "u"
+    var combined = new RegExp(reUnion(parts) + suffix, flags)
+    return {regexp: combined, groups: groups, fast: fast, error: errorRule || defaultErrorRule}
+  }
+
+  function compile(rules) {
+    var result = compileRules(toRules(rules))
+    return new Lexer({start: result}, 'start')
+  }
+
+  function checkStateGroup(g, name, map) {
+    var state = g && (g.push || g.next)
+    if (state && !map[state]) {
+      throw new Error("Missing state '" + state + "' (in token '" + g.defaultType + "' of state '" + name + "')")
+    }
+    if (g && g.pop && +g.pop !== 1) {
+      throw new Error("pop must be 1 (in token '" + g.defaultType + "' of state '" + name + "')")
+    }
+  }
+  function compileStates(states, start) {
+    var all = states.$all ? toRules(states.$all) : []
+    delete states.$all
+
+    var keys = Object.getOwnPropertyNames(states)
+    if (!start) start = keys[0]
+
+    var ruleMap = Object.create(null)
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i]
+      ruleMap[key] = toRules(states[key]).concat(all)
+    }
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i]
+      var rules = ruleMap[key]
+      var included = Object.create(null)
+      for (var j = 0; j < rules.length; j++) {
+        var rule = rules[j]
+        if (!rule.include) continue
+        var splice = [j, 1]
+        if (rule.include !== key && !included[rule.include]) {
+          included[rule.include] = true
+          var newRules = ruleMap[rule.include]
+          if (!newRules) {
+            throw new Error("Cannot include nonexistent state '" + rule.include + "' (in state '" + key + "')")
+          }
+          for (var k = 0; k < newRules.length; k++) {
+            var newRule = newRules[k]
+            if (rules.indexOf(newRule) !== -1) continue
+            splice.push(newRule)
+          }
+        }
+        rules.splice.apply(rules, splice)
+        j--
+      }
+    }
+
+    var map = Object.create(null)
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i]
+      map[key] = compileRules(ruleMap[key], true)
+    }
+
+    for (var i = 0; i < keys.length; i++) {
+      var name = keys[i]
+      var state = map[name]
+      var groups = state.groups
+      for (var j = 0; j < groups.length; j++) {
+        checkStateGroup(groups[j], name, map)
+      }
+      var fastKeys = Object.getOwnPropertyNames(state.fast)
+      for (var j = 0; j < fastKeys.length; j++) {
+        checkStateGroup(state.fast[fastKeys[j]], name, map)
+      }
+    }
+
+    return new Lexer(map, start)
+  }
+
+  function keywordTransform(map) {
+
+    // Use a JavaScript Map to map keywords to their corresponding token type
+    // unless Map is unsupported, then fall back to using an Object:
+    var isMap = typeof Map !== 'undefined'
+    var reverseMap = isMap ? new Map : Object.create(null)
+
+    var types = Object.getOwnPropertyNames(map)
+    for (var i = 0; i < types.length; i++) {
+      var tokenType = types[i]
+      var item = map[tokenType]
+      var keywordList = Array.isArray(item) ? item : [item]
+      keywordList.forEach(function(keyword) {
+        if (typeof keyword !== 'string') {
+          throw new Error("keyword must be string (in keyword '" + tokenType + "')")
+        }
+        if (isMap) {
+          reverseMap.set(keyword, tokenType)
+        } else {
+          reverseMap[keyword] = tokenType
+        }
+      })
+    }
+    return function(k) {
+      return isMap ? reverseMap.get(k) : reverseMap[k]
+    }
+  }
+
+  /***************************************************************************/
+
+  var Lexer = function(states, state) {
+    this.startState = state
+    this.states = states
+    this.buffer = ''
+    this.stack = []
+    this.reset()
+  }
+
+  Lexer.prototype.reset = function(data, info) {
+    this.buffer = data || ''
+    this.index = 0
+    this.line = info ? info.line : 1
+    this.col = info ? info.col : 1
+    this.queuedToken = info ? info.queuedToken : null
+    this.queuedText = info ? info.queuedText: "";
+    this.queuedThrow = info ? info.queuedThrow : null
+    this.setState(info ? info.state : this.startState)
+    this.stack = info && info.stack ? info.stack.slice() : []
+    return this
+  }
+
+  Lexer.prototype.save = function() {
+    return {
+      line: this.line,
+      col: this.col,
+      state: this.state,
+      stack: this.stack.slice(),
+      queuedToken: this.queuedToken,
+      queuedText: this.queuedText,
+      queuedThrow: this.queuedThrow,
+    }
+  }
+
+  Lexer.prototype.setState = function(state) {
+    if (!state || this.state === state) return
+    this.state = state
+    var info = this.states[state]
+    this.groups = info.groups
+    this.error = info.error
+    this.re = info.regexp
+    this.fast = info.fast
+  }
+
+  Lexer.prototype.popState = function() {
+    this.setState(this.stack.pop())
+  }
+
+  Lexer.prototype.pushState = function(state) {
+    this.stack.push(this.state)
+    this.setState(state)
+  }
+
+  var eat = hasSticky ? function(re, buffer) { // assume re is /y
+    return re.exec(buffer)
+  } : function(re, buffer) { // assume re is /g
+    var match = re.exec(buffer)
+    // will always match, since we used the |(?:) trick
+    if (match[0].length === 0) {
+      return null
+    }
+    return match
+  }
+
+  Lexer.prototype._getGroup = function(match) {
+    var groupCount = this.groups.length
+    for (var i = 0; i < groupCount; i++) {
+      if (match[i + 1] !== undefined) {
+        return this.groups[i]
+      }
+    }
+    throw new Error('Cannot find token type for matched text')
+  }
+
+  function tokenToString() {
+    return this.value
+  }
+
+  Lexer.prototype.next = function() {
+    var index = this.index
+
+    // If a fallback token matched, we don't need to re-run the RegExp
+    if (this.queuedGroup) {
+      var token = this._token(this.queuedGroup, this.queuedText, index)
+      this.queuedGroup = null
+      this.queuedText = ""
+      return token
+    }
+
+    var buffer = this.buffer
+    if (index === buffer.length) {
+      return // EOF
+    }
+
+    // Fast matching for single characters
+    var group = this.fast[buffer.charCodeAt(index)]
+    if (group) {
+      return this._token(group, buffer.charAt(index), index)
+    }
+
+    // Execute RegExp
+    var re = this.re
+    re.lastIndex = index
+    var match = eat(re, buffer)
+
+    // Error tokens match the remaining buffer
+    var error = this.error
+    if (match == null) {
+      return this._token(error, buffer.slice(index, buffer.length), index)
+    }
+
+    var group = this._getGroup(match)
+    var text = match[0]
+
+    if (error.fallback && match.index !== index) {
+      this.queuedGroup = group
+      this.queuedText = text
+
+      // Fallback tokens contain the unmatched portion of the buffer
+      return this._token(error, buffer.slice(index, match.index), index)
+    }
+
+    return this._token(group, text, index)
+  }
+
+  Lexer.prototype._token = function(group, text, offset) {
+    // count line breaks
+    var lineBreaks = 0
+    if (group.lineBreaks) {
+      var matchNL = /\n/g
+      var nl = 1
+      if (text === '\n') {
+        lineBreaks = 1
+      } else {
+        while (matchNL.exec(text)) { lineBreaks++; nl = matchNL.lastIndex }
+      }
+    }
+
+    var token = {
+      type: (typeof group.type === 'function' && group.type(text)) || group.defaultType,
+      value: typeof group.value === 'function' ? group.value(text) : text,
+      text: text,
+      toString: tokenToString,
+      offset: offset,
+      lineBreaks: lineBreaks,
+      line: this.line,
+      col: this.col,
+    }
+    // nb. adding more props to token object will make V8 sad!
+
+    var size = text.length
+    this.index += size
+    this.line += lineBreaks
+    if (lineBreaks !== 0) {
+      this.col = size - nl + 1
+    } else {
+      this.col += size
+    }
+
+    // throw, if no rule with {error: true}
+    if (group.shouldThrow) {
+      var err = new Error(this.formatError(token, "invalid syntax"))
+      throw err;
+    }
+
+    if (group.pop) this.popState()
+    else if (group.push) this.pushState(group.push)
+    else if (group.next) this.setState(group.next)
+
+    return token
+  }
+
+  if (typeof Symbol !== 'undefined' && Symbol.iterator) {
+    var LexerIterator = function(lexer) {
+      this.lexer = lexer
+    }
+
+    LexerIterator.prototype.next = function() {
+      var token = this.lexer.next()
+      return {value: token, done: !token}
+    }
+
+    LexerIterator.prototype[Symbol.iterator] = function() {
+      return this
+    }
+
+    Lexer.prototype[Symbol.iterator] = function() {
+      return new LexerIterator(this)
+    }
+  }
+
+  Lexer.prototype.formatError = function(token, message) {
+    if (token == null) {
+      // An undefined token indicates EOF
+      var text = this.buffer.slice(this.index)
+      var token = {
+        text: text,
+        offset: this.index,
+        lineBreaks: text.indexOf('\n') === -1 ? 0 : 1,
+        line: this.line,
+        col: this.col,
+      }
+    }
+    
+    var numLinesAround = 2
+    var firstDisplayedLine = Math.max(token.line - numLinesAround, 1)
+    var lastDisplayedLine = token.line + numLinesAround
+    var lastLineDigits = String(lastDisplayedLine).length
+    var displayedLines = lastNLines(
+        this.buffer, 
+        (this.line - token.line) + numLinesAround + 1
+      )
+      .slice(0, 5)
+    var errorLines = []
+    errorLines.push(message + " at line " + token.line + " col " + token.col + ":")
+    errorLines.push("")
+    for (var i = 0; i < displayedLines.length; i++) {
+      var line = displayedLines[i]
+      var lineNo = firstDisplayedLine + i
+      errorLines.push(pad(String(lineNo), lastLineDigits) + "  " + line);
+      if (lineNo === token.line) {
+        errorLines.push(pad("", lastLineDigits + token.col + 1) + "^")
+      }
+    }
+    return errorLines.join("\n")
+  }
+
+  Lexer.prototype.clone = function() {
+    return new Lexer(this.states, this.state)
+  }
+
+  Lexer.prototype.has = function(tokenType) {
+    return true
+  }
+
+
+  return {
+    compile: compile,
+    states: compileStates,
+    error: Object.freeze({error: true}),
+    fallback: Object.freeze({fallback: true}),
+    keywords: keywordTransform,
+  }
+
+}));
+
+
+/***/ }),
+
 /***/ "./node_modules/style-mod/dist/style-mod.cjs":
 /*!***************************************************!*\
   !*** ./node_modules/style-mod/dist/style-mod.cjs ***!
@@ -28052,6 +28704,202 @@ function clearBinaryView(view) {
 
 module.exports = {simulateTab, displayBinaryCode, clearBinaryView};
 
+/***/ }),
+
+/***/ "./src/client/js/highlightField.js":
+/*!*****************************************!*\
+  !*** ./src/client/js/highlightField.js ***!
+  \*****************************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+const moo = __webpack_require__(/*! moo */ "./node_modules/moo/moo.js");
+const {StateField} = __webpack_require__(/*! @codemirror/state */ "./node_modules/@codemirror/state/dist/index.cjs");
+const {Decoration, EditorView} = __webpack_require__(/*! @codemirror/view */ "./node_modules/@codemirror/view/dist/index.cjs");
+
+const commentHighlight = Decoration.mark({class: 'commentHighlight'});
+const opcodeHighlight = Decoration.mark({class: 'opcodeHighlight'});
+const errorHighlight = Decoration.mark({class: 'errorHighlight'});
+const directiveHighlight = Decoration.mark({class: 'directiveHighlight'});
+const labelOperandHighlight = Decoration.mark({class: 'labelOperandHighlight'});
+const labelHighlight = Decoration.mark({class: 'labelHighlight'});
+const registerHighlight = Decoration.mark({class: 'registerHighlight'});
+const constantHighlight = Decoration.mark({class: 'constantHighlight'});
+
+const lexer = moo.compile({
+    ws: /[ \t]+/,
+    register: /r[0-7](?![^ \t,])/,
+    addAndOpcode: /(?:add|and)(?![^ \t])/,
+    brOpcode: /brn?z?p?(?![^ \t])/,
+    jmpOpcode: /jmp(?![^ \t])/,
+    retOpcode: /ret(?![^ \t])/,
+    jssrOpcode: /jssr(?![^ \t])/,
+    jsrOpcode: /jsr(?![^ \t])/,
+    ldrStrOpcode: /(?:ldr|str)(?![^ \t])/,
+    ldLdiStStiLeaOpcode: /(?:ld|ldi|st|sti|lea)(?![^ \t])/,
+    notOpcode: /not(?![^ \t])/,
+    trapOpcode: /trap(?![^ \t])/,
+    getcOpcode: /getc(?![^ \t])/,
+    outOpcode: /out(?![^ \t])/,
+    putsOpcode: /puts(?![^ \t])/,
+    inOpcode: /in(?![^ \t])/,
+    putspOpcode: /putsp(?![^ \t])/,
+    haltOpcode: /halt(?![^ \t])/,
+    decimal: /#(?:[+-]?[0-9]+)(?![^ \t])/,
+    binary: /0b[0-1]+(?![^ \t])/,
+    hexadecimal: /0x[0-9a-fA-F]+(?![^ \t])/,
+    operandSeparator: /[ \t]*,[ \t]*/,
+    endDirective: /\.end(?![^ \t])/,
+    origDirective: /\.orig(?![^ \t])/,
+    fillDirective: /\.fill(?![^ \t])/,
+    blkwDirective: /\.blkw(?![^ \t])/,
+    stringzDirective: /\.stringz(?![^ \t])/,
+    comment: /;[^\n]*/,
+    fillCharacter: /'.*'/,
+    stringzSequence: /".*"/,
+    label: /[a-zA-Z][a-zA-Z0-9_]*:?/,
+    minus: /\-(?![^ \t])/,
+    error: /\S+/,
+});
+
+const highlightField = StateField.define({
+    create() {
+        return Decoration.none;
+    },
+    update(deco, tr) {
+        deco = deco.map(tr.changes);
+
+        const newDecos = [];
+
+        //print each line of the codemirror
+        if (tr.docChanged) {
+            const uniqueAffectedLines = new Set();
+
+            tr.changes.iterChanges((from, to, fromA, toA, inserted) => {
+                const startLineNew = tr.state.doc.lineAt(fromA).number;
+                const endLineNew = tr.state.doc.lineAt(toA).number;
+                console.log(`Line ${startLineNew} to ${endLineNew}\n`);
+                uniqueAffectedLines.add(startLineNew);
+                uniqueAffectedLines.add(endLineNew);
+
+                for (let pos = startLineNew; pos <= endLineNew; pos++) {
+                    const line = tr.state.doc.line(pos);
+                    const lineText = line.text.toLowerCase();
+                    const lineStart = line.from;
+                    let canBeLabel = true;
+
+                    console.log(lineText);
+                    
+                    lexer.reset(lineText);
+
+                    while ((token = lexer.next())) {
+                        if (token.type === 'error') {
+                            console.log(`Lexer error on line ${pos}, column${token.col}\n`);
+                            console.log(`Unmatched text: '${token.text}'\n`);
+                            newDecos.push(errorHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
+                            continue;
+                        }
+
+                        switch(token.type) {
+                            case 'addAndOpcode':
+                            case 'brOpcode':
+                            case 'jmpOpcode':
+                            case 'retOpcode':
+                            case 'jssrOpcode':
+                            case 'jsrOpcode':
+                            case 'ldrStrOpcode':
+                            case 'ldLdiStStiLeaOpcode':
+                            case 'notOpcode':
+                            case 'trapOpcode':
+                            case 'getcOpcode':
+                            case 'outOpcode':
+                            case 'putsOpcode':
+                            case 'inOpcode':
+                            case 'putspOpcode':
+                            case 'haltOpcode': {
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                newDecos.push(opcodeHighlight.range(start, end));
+                                break;
+                            }   
+                            case 'endDirective':
+                            case 'origDirective':
+                            case 'fillDirective':
+                            case 'blkwDirective':
+                            case 'stringzDirective':{
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                newDecos.push(directiveHighlight.range(start, end));
+                                break;
+                            }   
+                            case 'register':{
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                newDecos.push(registerHighlight.range(start, end));
+                                break;
+                            }   
+                            case 'decimal':
+                            case 'binary':
+                            case 'hexadecimal':
+                            case 'fillCharacter':
+                            case 'stringzSequence':{
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                newDecos.push(constantHighlight.range(start, end));
+                                break;
+                            }   
+                            case 'label':{
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                if (canBeLabel) {
+                                    newDecos.push(labelHighlight.range(start, end));
+                                } else {
+                                    newDecos.push(labelOperandHighlight.range(start, end));
+                                }
+                                break;
+                            }   
+                            case 'comment':{
+                                const start = lineStart + token.col - 1;
+                                const end = lineStart + token.offset + token.text.length;
+                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                newDecos.push(commentHighlight.range(start, end));
+                                break;
+                            }   
+                        }
+                        canBeLabel = false;
+                    }
+                }
+            });
+
+            let filterFrom = Infinity;
+            let filterTo = -Infinity;
+
+            for (const pos of uniqueAffectedLines) {
+                const line = tr.state.doc.line(pos);
+                filterFrom = Math.min(filterFrom, line.from);
+                filterTo = Math.max(filterTo, line.to);
+            }
+            
+            return deco.update({
+                filter: (from, to) => to <= filterFrom || from >= filterTo,
+                add: newDecos,
+                sort: true
+            });
+        }
+
+        return deco;
+    },
+    provide: f => EditorView.decorations.from(f)
+});
+
+module.exports = {
+    highlightField
+};
+
 /***/ })
 
 /******/ 	});
@@ -28074,7 +28922,7 @@ module.exports = {simulateTab, displayBinaryCode, clearBinaryView};
 /******/ 		};
 /******/ 	
 /******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
 /******/ 	
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
@@ -28104,11 +28952,44 @@ const {basicSetup} = __webpack_require__(/*! codemirror */ "./node_modules/codem
 const {EditorState} = __webpack_require__(/*! @codemirror/state */ "./node_modules/@codemirror/state/dist/index.cjs");
 const {EditorView, keymap} = __webpack_require__(/*! @codemirror/view */ "./node_modules/@codemirror/view/dist/index.cjs");
 const {simulateTab, displayBinaryCode, clearBinaryView} = __webpack_require__(/*! ./codeEditor.js */ "./src/client/js/codeEditor.js");
+const {highlightField} = __webpack_require__(/*! ./highlightField.js */ "./src/client/js/highlightField.js");
+
+
+const opcodes = ["add", "and", "br", "brn", "brz", "brp", "brnz", "brnp", "brzp", "brnzp", "ld", "ldi", "ldr", "lea", "not", "st", "sti", "str", "trap", "halt", "ret", "rti", "jmp", "jsr", "jsrr", "getc", "out", "puts", "in"];
+const assemblerDirectives = [".orig", ".end", ".fill", ".blkw", ".stringz"];
+
+
+const assemblyTheme = EditorView.baseTheme({
+    "&.cm-focused .cm-content": {
+        "caret-color": "#FFD700 !important"
+    },
+    ".cm-selectionBackground": {
+        "backgroundColor": "#284B63 !important"
+    },
+    ".cm-cursor, .cm-dropCursor": {
+        "borderLeftColor": "#FFD700"
+    },
+    "&": {
+        "outline": "none !important",
+        "width": "100%",
+        "background-color": "#1e1e1e",
+        "color": "#D4D4D4"
+    },
+    ".cm-gutters": {
+        "background-color": "#1e1e1e !important"
+    }
+});
 
 // State for assembly code container
 let assemblyState = EditorState.create({
     doc: '',
-    extensions: [basicSetup, EditorView.lineWrapping, keymap.of({key: 'Tab', run: simulateTab})]
+    extensions: [
+        basicSetup,
+        EditorView.lineWrapping,
+        keymap.of({key: 'Tab', run: simulateTab}),
+        highlightField,
+        assemblyTheme
+    ]
 });
 
 let assemblyView = new EditorView({
@@ -28116,16 +28997,23 @@ let assemblyView = new EditorView({
     parent: document.getElementById('assembly-container')
 });
 
+
+
 // State for binary code container
 let binaryState = EditorState.create({
-    doc: '',
-    extensions: [basicSetup, EditorView.lineWrapping, EditorView.editable.of(false)]
+    extensions: [
+        basicSetup, 
+        EditorView.lineWrapping, 
+        EditorView.editable.of(false)
+    ]
 });
 
 let binaryView = new EditorView({
     state: binaryState,
     parent: document.getElementById('binary-container')
 });
+
+
 
 // Send a request to the server with the assemble button
 const assembleButton = document.getElementById('assemble-button');
@@ -28148,7 +29036,6 @@ assembleButton.addEventListener('click', async () => {
     const result = await response.json();
     const binaryCode = result.binaryCode.trim();
 
-    console.log(binaryCode);
 
     displayBinaryCode(binaryView, binaryCode);
 });

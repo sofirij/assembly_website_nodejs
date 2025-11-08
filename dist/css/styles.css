@@ -1,12 +1,17 @@
 /*!*****************************************************************************!*\
   !*** css ./node_modules/css-loader/dist/cjs.js!./src/client/css/styles.css ***!
   \*****************************************************************************/
+body {
+    background-color: #1e1e1e;
+}
+
 .application-container {
     display: flex;
     margin: 0 auto;
     height: 100dvh;
     justify-content: center;
     align-items: center;
+    background-color: #1e1e1e;
 }
 
 .assembly-container,
@@ -14,8 +19,9 @@
     display: flex;
     margin: 0 auto;
     height: 70%;
-    border: 1px solid black;
+    border:2px solid white;
     width: 40%;
+    border-radius: 1%;
 }
 
 .assemble-button-container {
@@ -28,12 +34,44 @@
     justify-content: center;
 }
 
-.cm-editor {
-  outline: none !important;
-  width: 100%;
+.assembly-button {
+    border-radius: 10%;
+    background-color: white;
 }
 
+.commentHighlight {
+    color: #7F848E;
+}
 
+.opcodeHighlight {
+    color: #FF6347;
+}
 
+.labelHighlight {
+    color: #FFD700;
+}
+
+.labelOperandHighlight {
+    color: #D19A66;
+}
+
+.registerHighlight {
+    color: #61AFEF;
+}
+
+.constantHighlight {
+    color: #98C379;
+}
+
+.directiveHighlight {
+    color: #C678DD;
+}
+
+.errorHighlight {
+    text-decoration: underline;
+    text-decoration-color: #FF3333;
+    text-decoration-thickness: 0.5px;
+    text-underline-offset: 0.25em;
+}
 
 /*# sourceMappingURL=styles.css.map*/
