@@ -16,7 +16,7 @@ body {
     display: flex;
     margin: 0 auto;
     height: 70%;
-    border:2px solid black;
+    border:2px solid white;
     width: 40%;
     border-radius: 1%;
 }
@@ -36,28 +36,12 @@ body {
     background-color: white;
 }
 
-.cm-editor {
-    outline: none !important;
-    width: 100%;
-    background-color: #1e1e1e !important;
-    color: #D4D4D4;
-}
-
-.cm-gutter {
-    background-color: #1e1e1e;
-}
-
 .commentHighlight {
     color: #7F848E;
 }
 
-
 .opcodeHighlight {
     color: #FF6347;
-}
-
-.operandHighlight {
-    color: orange;
 }
 
 .labelHighlight {
@@ -76,13 +60,13 @@ body {
     color: #98C379;
 }
 
+.directiveHighlight {
+    color: #C678DD;
+}
+
 .errorHighlight {
     text-decoration: underline;
     text-decoration-color: #FF3333;
     text-decoration-thickness: 0.5px;
     text-underline-offset: 0.25em;
-}
-
-.directiveHighlight {
-    color: #C678DD;
 }

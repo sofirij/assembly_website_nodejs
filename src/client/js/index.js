@@ -9,26 +9,26 @@ const {highlightField} = require('./highlightField.js');
 const opcodes = ["add", "and", "br", "brn", "brz", "brp", "brnz", "brnp", "brzp", "brnzp", "ld", "ldi", "ldr", "lea", "not", "st", "sti", "str", "trap", "halt", "ret", "rti", "jmp", "jsr", "jsrr", "getc", "out", "puts", "in"];
 const assemblerDirectives = [".orig", ".end", ".fill", ".blkw", ".stringz"];
 
-// Define your chosen cursor color
-const cursorColor = "#FFD700"; // Gold/Yellow
 
-const myCursorTheme = EditorView.baseTheme({
-  // The caret-color property targets the blinking text cursor
-  "&.cm-focused .cm-content": {
-    "caret-color": cursorColor
-  },
-  
-  // Optional: Also change the color of the *selection* range (the block/line highlight)
-  ".cm-selectionBackground": {
-    // This color should be related to your dark background but slightly different
-    backgroundColor: "rgba(100, 100, 100, 0.4)" 
-  },
-  
-  // Optional: Also change the color of the *block* cursor (when focused)
-  // This targets the block cursor that appears when the selection is collapsed/empty.
-  ".cm-cursor, .cm-dropCursor": {
-    borderLeftColor: cursorColor
-  }
+const assemblyTheme = EditorView.baseTheme({
+    "&.cm-focused .cm-content": {
+        "caret-color": "#FFD700 !important"
+    },
+    ".cm-selectionBackground": {
+        "backgroundColor": "#284B63 !important"
+    },
+    ".cm-cursor, .cm-dropCursor": {
+        "borderLeftColor": "#FFD700"
+    },
+    "&": {
+        "outline": "none !important",
+        "width": "100%",
+        "background-color": "#1e1e1e",
+        "color": "#D4D4D4"
+    },
+    ".cm-gutters": {
+        "background-color": "#1e1e1e !important"
+    }
 });
 
 // State for assembly code container
@@ -39,7 +39,7 @@ let assemblyState = EditorState.create({
         EditorView.lineWrapping,
         keymap.of({key: 'Tab', run: simulateTab}),
         highlightField,
-        myCursorTheme
+        assemblyTheme
     ]
 });
 
@@ -48,15 +48,23 @@ let assemblyView = new EditorView({
     parent: document.getElementById('assembly-container')
 });
 
+
+
 // State for binary code container
 let binaryState = EditorState.create({
-    extensions: [basicSetup, EditorView.lineWrapping, EditorView.editable.of(false)]
+    extensions: [
+        basicSetup, 
+        EditorView.lineWrapping, 
+        EditorView.editable.of(false)
+    ]
 });
 
 let binaryView = new EditorView({
     state: binaryState,
     parent: document.getElementById('binary-container')
 });
+
+
 
 // Send a request to the server with the assemble button
 const assembleButton = document.getElementById('assemble-button');
