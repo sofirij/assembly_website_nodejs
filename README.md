@@ -57,7 +57,7 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 
 ## Upcoming Updates
 
-- Syntax Checking
+- Syntax Highlighting
 - Linting
 - Containerization (with Docker)
 - Deploying the backend online
