@@ -11,41 +11,7 @@ const labelHighlight = Decoration.mark({class: 'labelHighlight'});
 const registerHighlight = Decoration.mark({class: 'registerHighlight'});
 const constantHighlight = Decoration.mark({class: 'constantHighlight'});
 
-const lexer = moo.compile({
-    ws: /[ \t]+/,
-    register: /r[0-7](?![^ \t,])/,
-    addAndOpcode: /(?:add|and)(?![^ \t])/,
-    brOpcode: /brn?z?p?(?![^ \t])/,
-    jmpOpcode: /jmp(?![^ \t])/,
-    retOpcode: /ret(?![^ \t])/,
-    jssrOpcode: /jssr(?![^ \t])/,
-    jsrOpcode: /jsr(?![^ \t])/,
-    ldrStrOpcode: /(?:ldr|str)(?![^ \t])/,
-    ldLdiStStiLeaOpcode: /(?:ld|ldi|st|sti|lea)(?![^ \t])/,
-    notOpcode: /not(?![^ \t])/,
-    trapOpcode: /trap(?![^ \t])/,
-    getcOpcode: /getc(?![^ \t])/,
-    outOpcode: /out(?![^ \t])/,
-    putsOpcode: /puts(?![^ \t])/,
-    inOpcode: /in(?![^ \t])/,
-    putspOpcode: /putsp(?![^ \t])/,
-    haltOpcode: /halt(?![^ \t])/,
-    decimal: /#(?:[+-]?[0-9]+)(?![^ \t])/,
-    binary: /0b[0-1]+(?![^ \t])/,
-    hexadecimal: /0x[0-9a-fA-F]+(?![^ \t])/,
-    operandSeparator: /[ \t]*,[ \t]*/,
-    endDirective: /\.end(?![^ \t])/,
-    origDirective: /\.orig(?![^ \t])/,
-    fillDirective: /\.fill(?![^ \t])/,
-    blkwDirective: /\.blkw(?![^ \t])/,
-    stringzDirective: /\.stringz(?![^ \t])/,
-    comment: /;[^\n]*/,
-    fillCharacter: /'.*'/,
-    stringzSequence: /".*"/,
-    label: /[a-zA-Z][a-zA-Z0-9_]*:?/,
-    minus: /\-(?![^ \t])/,
-    error: /\S+/,
-});
+const lexer = require('./lexer.js');
 
 const highlightField = StateField.define({
     create() {
@@ -56,10 +22,11 @@ const highlightField = StateField.define({
 
         const newDecos = [];
 
-        //print each line of the codemirror
+        // tokenize each line with the lexer and highlight each token
         if (tr.docChanged) {
             const uniqueAffectedLines = new Set();
 
+            // only work on the new lines
             tr.changes.iterChanges((from, to, fromA, toA, inserted) => {
                 const startLineNew = tr.state.doc.lineAt(fromA).number;
                 const endLineNew = tr.state.doc.lineAt(toA).number;
@@ -161,6 +128,8 @@ const highlightField = StateField.define({
                 }
             });
 
+            // lines that are to be updated should replace previous lines
+            // at the same time try not to touch unchanged lines
             let filterFrom = Infinity;
             let filterTo = -Infinity;
 

@@ -6,6 +6,7 @@ const {simulateTab, displayBinaryCode, clearBinaryView} = require('./codeEditor.
 const {highlightField} = require('./highlightField.js');
 
 
+
 const opcodes = ["add", "and", "br", "brn", "brz", "brp", "brnz", "brnp", "brzp", "brnzp", "ld", "ldi", "ldr", "lea", "not", "st", "sti", "str", "trap", "halt", "ret", "rti", "jmp", "jsr", "jsrr", "getc", "out", "puts", "in"];
 const assemblerDirectives = [".orig", ".end", ".fill", ".blkw", ".stringz"];
 
@@ -66,28 +67,11 @@ let binaryView = new EditorView({
 
 
 
-// Send a request to the server with the assemble button
 const assembleButton = document.getElementById('assemble-button');
 
-assembleButton.addEventListener('click', async () => {
-    // clear the binary view
-    clearBinaryView(binaryView);
 
-    // send a request to the server to assemble the code to binary
-    const assemblyCode = assemblyView.state.doc.toString();
-    const response = await fetch('/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({assemblyCode: assemblyCode})
-    });
-
-    // display the binary code
-    const result = await response.json();
-    const binaryCode = result.binaryCode.trim();
-
-
-    displayBinaryCode(binaryView, binaryCode);
-});
-
+module.exports = {
+    assemblyView,
+    binaryView,
+    assembleButton
+};
