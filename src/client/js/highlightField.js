@@ -129,7 +129,7 @@ const highlightField = StateField.define({
                 }
             });
 
-            // lines that are to be updated should replace previous lines
+            // line decorations that are to be updated should replace previous line decorations
             // at the same time try not to touch unchanged lines
             let filterFrom = Infinity;
             let filterTo = -Infinity;
