@@ -13,7 +13,7 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Users write LC3 assembly code in the browser
 - Clicking the assembly button would initiate the assembling process
 - Any errors whether semantic or syntactic, will be pointed out in a user friendly manner (still in dev)
-- If there are no errors, the assembled version of your code would be shown in a human readable format (i.e a description of the assembly before conversion)
+- If there are no errors, the assembled version of your code would be shown in a human readable format (i.e  the binary code with a description of the assembly before conversion)
 - The binary code is displayed in the read-only binary editor
 
 ## Getting Started
