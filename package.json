@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "@codemirror/commands": "^6.8.1",
+    "@codemirror/lint": "^6.9.2",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.2",
     "bcrypt": "^6.0.0",
@@ -23,6 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "mini-css-extract-plugin": "^2.9.4",
     "moo": "^0.5.2",
+    "mz": "^2.7.0",
     "nearley": "^2.20.1"
   },
   "devDependencies": {

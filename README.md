@@ -1,27 +1,20 @@
 # LC3 Assembler Web Application
 
-This project is a web-based LC3 assembler built with Node.js, Express, and CodeMirror. It allows users to write LC3 assembly code in the browser, assemble it using a native executable, and view the resulting binary code.
+This project is a web-based LC3 assembler built with Node.js, Express, and CodeMirror. It allows users to write LC3 assembly code in the browser, assemble it using a server side assembler.
 
 ## Features
 
 - **Assembly Editor:** Write LC3 assembly code with syntax highlighting and tab support using CodeMirror.
 - **Binary Viewer:** View the assembled binary code in a read-only editor.
 - **One-Click Assemble:** Convert assembly code to binary with a single button click.
-- **Native Assembler Integration:** Uses a C-based assembler executable (`assembler.exe`) on the backend for accurate assembly.
+- **Client Assembler Integration:** No need to worry about delays when assembling is performed on the client side.
 
 ## How It Works
-
-1. **Frontend:**  
-   - Users write LC3 assembly code in the browser.
-   - Clicking "Assemble" sends the code to the backend via a POST request.
-
-2. **Backend:**  
-   - The Express server receives the code and runs `assembler.exe`, passing the code as input.
-   - The assembler processes the code and returns the binary output.
-   - The server responds with the binary code as JSON.
-
-3. **Frontend:**  
-   - The binary code is displayed in the read-only binary editor.
+- Users write LC3 assembly code in the browser
+- Clicking the assembly button would initiate the assembling process
+- Any errors whether semantic or syntactic, will be pointed out in a user friendly manner (still in dev)
+- If there are no errors, the assembled version of your code would be shown in a human readable format (i.e a description of the assembly before conversion)
+- The binary code is displayed in the read-only binary editor
 
 ## Getting Started
 
@@ -47,17 +40,9 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 
 - Node.js and npm
 - Webpack (configured in `webpack.config.js`)
-- A compiled `assembler.exe` in `src/server/exe/` (Windows only)
-
-## Notes
-
-- The assembler executable must be built and placed in `src/server/exe/`.
-- The project uses strict Content Security Policy for security.
-- All code editing and viewing is done in the browser using CodeMirror.
 
 ## Upcoming Updates
 
 - Linting
 - Containerization (with Docker)
 - Deploying the backend online
-- Server side assembling
