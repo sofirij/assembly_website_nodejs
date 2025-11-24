@@ -57,7 +57,8 @@ const highlightField = StateField.define({
                             case 'brOpcode':
                             case 'jmpOpcode':
                             case 'retOpcode':
-                            case 'jssrOpcode':
+                            case 'rtiOpcode':
+                            case 'jsrrOpcode':
                             case 'jsrOpcode':
                             case 'ldrStrOpcode':
                             case 'ldLdiStStiLeaOpcode':

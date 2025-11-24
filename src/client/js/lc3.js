@@ -159,7 +159,7 @@ const lexer = require('./lexer.js');
 var grammar = {
     Lexer: lexer,
     ParserRules: [
-    {"name": "input", "symbols": ["_", "line"], "postprocess": (data) => JSON.stringify(data[1])},
+    {"name": "input", "symbols": ["_", "line"], "postprocess": (data) => data[1]},
     {"name": "line$ebnf$1$subexpression$1", "symbols": [(lexer.has("label") ? {type: "label"} : label), (lexer.has("ws") ? {type: "ws"} : ws)]},
     {"name": "line$ebnf$1", "symbols": ["line$ebnf$1$subexpression$1"], "postprocess": id},
     {"name": "line$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
@@ -223,6 +223,20 @@ var grammar = {
                 errors: errorFromDirectiveExpression
             };
         } },
+    {"name": "line", "symbols": [(lexer.has("label") ? {type: "label"} : label)], "postprocess":  ([label]) => {
+            const errorFromLabel = validateLabelName(label.value, label.offset);
+            
+            return {
+                type: 'labelLine',
+                label: label.value,
+                labelStart: label.col,
+                labelEnd: label.value.length,
+                comment: null,
+                commentStart: null,
+                commentEnd: null,
+                errors: [...(errorFromLabel ? [errorFromLabel] : [])]
+            }
+        } },
     {"name": "operandExpression", "symbols": [(lexer.has("addAndOpcode") ? {type: "addAndOpcode"} : addAndOpcode), (lexer.has("ws") ? {type: "ws"} : ws), (lexer.has("register") ? {type: "register"} : register), (lexer.has("operandSeparator") ? {type: "operandSeparator"} : operandSeparator), (lexer.has("register") ? {type: "register"} : register), (lexer.has("operandSeparator") ? {type: "operandSeparator"} : operandSeparator), "addAndOperand"], "postprocess":  ([opcode, , destinationRegister, , sourceRegister1, , lastOperand]) => {
             const binaryOpcode = opcode.value.toLowerCase() === 'add' ? '0001' : '0101';
             // no need to pass in bits value
@@ -247,7 +261,7 @@ var grammar = {
                     ...lastOperand.operand
                 },
                 error: [...lastOperand.error],
-                binary: binary
+                binary: binary + `   => ${opcode.text} ${destinationRegister.value}, ${sourceRegister1.value}, ${lastOperand.text}`
             };
         } },
     {"name": "operandExpression", "symbols": [(lexer.has("brOpcode") ? {type: "brOpcode"} : brOpcode), (lexer.has("ws") ? {type: "ws"} : ws), "brOperand"], "postprocess":  ([opcode, , lastOperand]) => {
@@ -292,7 +306,7 @@ var grammar = {
                     ...lastOperand.operand
                 },
                 error: [...lastOperand.error],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${lastOperand.text}`
             }
         } },
     {"name": "operandExpression", "symbols": [(lexer.has("jmpOpcode") ? {type: "jmpOpcode"} : jmpOpcode), (lexer.has("ws") ? {type: "ws"} : ws), (lexer.has("register") ? {type: "register"} : register)], "postprocess":  ([opcode, , register]) => {
@@ -301,7 +315,7 @@ var grammar = {
             const binaryBaseRegister = convertToBinaryString(register.value, register.type);
             const reservedBit = '0';
         
-            const binary = binaryOpcode + delimeter + (reservedBit+delimeter).repeat(3) + binaryBaseRegister + (delimeter+reservedBit).repeat(6);
+            const binary = binaryOpcode + delimeter + (reservedBit).repeat(3) + delimeter + binaryBaseRegister + delimeter + (reservedBit).repeat(6);
         
             return {
                 opcode: opcode.value,
@@ -313,7 +327,7 @@ var grammar = {
                     baseRegisterEnd: register.offset + register.value.length
                 },
                 error: [],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${register.value}`
             }
         } },
     {"name": "operandExpression", "symbols": [(lexer.has("jsrrOpcode") ? {type: "jsrrOpcode"} : jsrrOpcode), (lexer.has("ws") ? {type: "ws"} : ws), (lexer.has("register") ? {type: "register"} : register)], "postprocess":  ([opcode, , register]) => {
@@ -322,7 +336,7 @@ var grammar = {
             const binaryBaseRegister = convertToBinaryString(register.value, register.type);
             const reservedBit = '0';
         
-            const binary = binaryOpcode + delimeter + (reservedBit+delimeter).repeat(3) + binaryBaseRegister + (delimeter+reservedBit).repeat(6);
+            const binary = binaryOpcode + delimeter + (reservedBit).repeat(3) + delimeter + binaryBaseRegister + delimeter + (reservedBit).repeat(6);
         
             return {
                 opcode: opcode.value,
@@ -334,7 +348,7 @@ var grammar = {
                     baseRegisterEnd: register.offset + register.value.length
                 },
                 error: [],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${register.value}`
             }
         } },
     {"name": "operandExpression", "symbols": [(lexer.has("jsrOpcode") ? {type: "jsrOpcode"} : jsrOpcode), (lexer.has("ws") ? {type: "ws"} : ws), "jsrOperand"], "postprocess":  ([opcode, , lastOperand]) => {
@@ -353,44 +367,69 @@ var grammar = {
                     ...lastOperand.operand
                 },
                 error: [...lastOperand.error],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${lastOperand.text}`
             }
         } },
-    {"name": "operandExpression", "symbols": [(lexer.has("ldLdiStStiLeaOpcode") ? {type: "ldLdiStStiLeaOpcode"} : ldLdiStStiLeaOpcode), (lexer.has("ws") ? {type: "ws"} : ws), (lexer.has("register") ? {type: "register"} : register), (lexer.has("operandSeparator") ? {type: "operandSeparator"} : operandSeparator), "ldLdiStStiLeaOperand"], "postprocess":  ([opcode, , destinationRegister, , lastOperand]) => {
+    {"name": "operandExpression", "symbols": [(lexer.has("ldLdiStStiLeaOpcode") ? {type: "ldLdiStStiLeaOpcode"} : ldLdiStStiLeaOpcode), (lexer.has("ws") ? {type: "ws"} : ws), (lexer.has("register") ? {type: "register"} : register), (lexer.has("operandSeparator") ? {type: "operandSeparator"} : operandSeparator), "ldLdiStStiLeaOperand"], "postprocess":  ([opcode, , register, , lastOperand]) => {
+            // register can either be a source register or a destination register
             let binaryOpcode;
-        
-            switch (opcode.value) {
-                case 'ld':
-                    binaryOpcode = '0010';
-                    break;
-                case 'ldi':
-                    binaryOpcode = '1010';
-                    break;
-                case 'st':
-                    binaryOpcode = '0011';
-                    break;
-                case 'sti':
-                    binaryOpcode = '1011';
-                    break;
-            }
+            let registerName;
         
             const delimeter = ',';
-            const binaryDestinationRegister = convertToBinaryString(destinationRegister.value, destinationRegister.type);
             const binaryLastOperand = lastOperand.binary;
-            const binary = binaryOpcode + delimeter + binaryDestinationRegister + delimeter + binaryLastOperand;
+        
+            switch (opcode.value) {
+                case 'ld': {
+                    binaryOpcode = '0010';
+                    registerName = 'destinationRegister';
+                    const binaryDestinationRegister = convertToBinaryString(register.value, register.type);
+                    binary = binaryOpcode + delimeter + binaryDestinationRegister + delimeter + binaryLastOperand;
+                    break;
+                }
+                case 'ldi': {
+                    binaryOpcode = '1010';
+                    registerName = 'destinationRegister';
+                    const binaryDestinationRegister = convertToBinaryString(register.value, register.type);
+                    binary = binaryOpcode + delimeter + binaryDestinationRegister + delimeter + binaryLastOperand;
+                    break;
+                }
+                case 'lea': {
+                    binaryOpcode = '1110';
+                    registerName = 'destinationRegister';
+                    const binaryDestinationRegister = convertToBinaryString(register.value, register.type);
+                    binary = binaryOpcode + delimeter + binaryDestinationRegister + delimeter + binaryLastOperand;
+                    break;
+                }
+                case 'st': {
+                    binaryOpcode = '0011';
+                    registerName = 'sourceRegister';
+                    const binarySourceRegister = convertToBinaryString(register.value, register.type);
+                    binary = binaryOpcode + delimeter + binarySourceRegister + delimeter + binaryLastOperand;
+                    break;
+                }
+                case 'sti': {
+                    binaryOpcode = '1011';
+                    registerName = 'sourceRegister';
+                    const binarySourceRegister = convertToBinaryString(register.value, register.type);
+                    binary = binaryOpcode + delimeter + binarySourceRegister + delimeter + binaryLastOperand;
+                    break;
+                }
+            }
+        
+        
         
             return {
                 opcode: opcode.value,
                 opcodeStart: opcode.col,
                 opcodeEnd: opcode.offset + opcode.value.length,
                 operands: {
-                    destinationRegister: destinationRegister.value,
-                    destinationRegisterStart: destinationRegister.col,
-                    destinationRegisterEnd: destinationRegister.offset + destinationRegister.value.length,
+                    [registerName]: register.value,
+                    [`${registerName}End`]: register.col,
+                    [`${registerName}Start`]: register.offset + register.value.length,
                     ...lastOperand.operand
                 },
                 error: [...lastOperand.error],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${register.value}, ${lastOperand.text}`
             };
         } },
     {"name": "operandExpression", "symbols": [(lexer.has("ldrStrOpcode") ? {type: "ldrStrOpcode"} : ldrStrOpcode), (lexer.has("ws") ? {type: "ws"} : ws), (lexer.has("register") ? {type: "register"} : register), (lexer.has("operandSeparator") ? {type: "operandSeparator"} : operandSeparator), (lexer.has("register") ? {type: "register"} : register), (lexer.has("operandSeparator") ? {type: "operandSeparator"} : operandSeparator), "ldrStrOperand"], "postprocess":  ([opcode, , register, , baseRegister, , lastOperand]) => {
@@ -432,13 +471,13 @@ var grammar = {
                     ...lastOperand.operand
                 },
                 error: [...lastOperand.error],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${register.value}, ${baseRegister.value}, ${lastOperand.text}`
             };
         } },
     {"name": "operandExpression", "symbols": [(lexer.has("notOpcode") ? {type: "notOpcode"} : notOpcode), (lexer.has("ws") ? {type: "ws"} : ws), (lexer.has("register") ? {type: "register"} : register), (lexer.has("operandSeparator") ? {type: "operandSeparator"} : operandSeparator), (lexer.has("register") ? {type: "register"} : register)], "postprocess":  ([opcode, , destinationRegister, , sourceRegister]) => {
             const delimeter = ',';
             const binaryOpcode = '1001';
-            const reservedBits = '1,1,1,1,1,1';
+            const reservedBits = '111111';
             const binaryDestinationRegister = convertToBinaryString(destinationRegister.value, destinationRegister.type);
             const binarySourceRegister = convertToBinaryString(sourceRegister.value, sourceRegister.type);
         
@@ -456,13 +495,13 @@ var grammar = {
                     sourceRegisterEnd: sourceRegister.value.length + sourceRegister.offset
                 },
                 error: [],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${destinationRegister.value}, ${sourceRegister.value}`
             }
         } },
     {"name": "operandExpression", "symbols": [(lexer.has("retOpcode") ? {type: "retOpcode"} : retOpcode)], "postprocess":  ([opcode]) => {
             const binaryOpcode = '1100';
             const delimeter = ',';
-            const reservedBits = '0,0,0,1,1,1,0,0,0,0,0,0';
+            const reservedBits = '000111000000';
         
             const binary = binaryOpcode + delimeter + reservedBits;
         
@@ -472,13 +511,13 @@ var grammar = {
                 opcodeEnd: opcode.offset + opcode.value.length,
                 operands: {},
                 error: [],
-                binary: binary
+                binary: binary + `   => ${opcode.value}`
             }
         } },
     {"name": "operandExpression", "symbols": [(lexer.has("rtiOpcode") ? {type: "rtiOpcode"} : rtiOpcode)], "postprocess":  ([opcode]) => {
             const binaryOpcode = '1000';
             const delimeter = ',';
-            const reservedBits = '0,0,0,0,0,0,0,0';
+            const reservedBits = '000000000000';
         
             const binary = binaryOpcode + delimeter + reservedBits;
         
@@ -488,7 +527,7 @@ var grammar = {
                 opcodeEnd: opcode.offset + opcode.value.length,
                 operands: {},
                 error: [],
-                binary: binary
+                binary: binary + `   => ${opcode.value}`
             }
         } },
     {"name": "operandExpression$subexpression$1", "symbols": [(lexer.has("decimal") ? {type: "decimal"} : decimal)]},
@@ -501,7 +540,7 @@ var grammar = {
             const delimeter = ',';
         
             const binary = binaryOpcode + delimeter + reservedBits + delimeter + binaryTrapVector;
-            
+        
             const errorFromTrapVector = validateTrapVector(trapVector.value, trapVector.type, trapVector.offset);
             return ({
                 opcode: opcode.value,
@@ -513,7 +552,7 @@ var grammar = {
                     trapVectorEnd: trapVector.offset + trapVector.value.length
                 },
                 error: [...(errorFromTrapVector ? [errorFromTrapVector] : [])],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${trapVector.value}`
             })
         } },
     {"name": "operandExpression$subexpression$2", "symbols": [(lexer.has("getcOpcode") ? {type: "getcOpcode"} : getcOpcode)]},
@@ -523,12 +562,41 @@ var grammar = {
     {"name": "operandExpression$subexpression$2", "symbols": [(lexer.has("putspOpcode") ? {type: "putspOpcode"} : putspOpcode)]},
     {"name": "operandExpression$subexpression$2", "symbols": [(lexer.has("haltOpcode") ? {type: "haltOpcode"} : haltOpcode)]},
     {"name": "operandExpression", "symbols": ["operandExpression$subexpression$2"], "postprocess":  ([[opcode]]) => {
+            const binaryOpcode = '1111';
+            const delimeter = ',';
+            const reservedBits = '0000';
+            let binaryTrapVector;
+        
+            switch (opcode.value) {
+                case 'getc':
+                    binaryTrapVector = '010100';
+                    break;
+                case 'out':
+                    binaryTrapVector = '010101';
+                    break;
+                case 'puts':
+                    binaryTrapVector = '010110';
+                    break;
+                case 'in':
+                    binaryTrapVector = '010111';
+                    break;
+                case 'putsp':
+                    binaryTrapVector = '011000';
+                    break;
+                case 'halt':
+                    binaryTrapVector = '011001';
+                    break;
+            }
+        
+            const binary = binaryOpcode + delimeter + reservedBits + delimeter + binaryTrapVector;
+        
             return {
                 opcode: opcode.value,
                 opcodeStart: opcode.col,
                 opcodeEnd: opcode.value.length + opcode.offset,
                 operands: {},
-                error: {}
+                error: [],
+                binary: binary + `   => ${opcode.value}`
             };
         } },
     {"name": "directiveExpression$subexpression$1", "symbols": [(lexer.has("hexadecimal") ? {type: "hexadecimal"} : hexadecimal)]},
@@ -541,10 +609,13 @@ var grammar = {
                 directive: directive.value,
                 directiveStart: directive.col,
                 directiveEnd: directive.value.length + directive.offset,
-                address: address.value,
-                addressStart: address.col,
-                addressEnd: address.value.length + address.offset,
-                error: [...(errorFromAddress ? [errorFromAddress] : [])]
+                operands: {
+                    address: address.value,
+                    addressStart: address.col,
+                    addressEnd: address.value.length + address.offset
+                },
+                error: [...(errorFromAddress ? [errorFromAddress] : [])],
+                binary: ''
             };
         }},
     {"name": "directiveExpression", "symbols": [(lexer.has("endDirective") ? {type: "endDirective"} : endDirective)], "postprocess":  ([directive]) => {
@@ -552,7 +623,9 @@ var grammar = {
                 directive: directive.value,
                 directiveStart: directive.col,
                 directiveEnd: directive.value.length + directive.offset,
-                error: []
+                operands: {},
+                error: [],
+                binary: ''
             };
         } },
     {"name": "directiveExpression$ebnf$1$subexpression$1", "symbols": [(lexer.has("label") ? {type: "label"} : label), (lexer.has("ws") ? {type: "ws"} : ws)]},
@@ -603,7 +676,7 @@ var grammar = {
                             error.push({semanticError: `Invalid character '${sequence}' should be a single character at index {value.col}`, end: value.offset+value.value.length});
                         } else {
                             const escapeCharacter = sequence[1];
-                            const validEscapeCharacters = ['n', 't', 'r', 'b', 'a', 'f', 'v', '\'', '"', '\\'];
+                            const validEscapeCharacters = ['n', 't', 'r', 'b', 'f', 'v', '\'', '"', '\\', '\0'];
                             if (!validEscapeCharacters.includes(escapeCharacter)) {
                                 error.push({semanticError: `Invalid escape sequence '${value.value}' at index ${value.col}`, end: value.offset+value.value.length});
                             }
@@ -614,17 +687,72 @@ var grammar = {
                     break;
             }
         
+            let binary = '0'
+            if (!errorFromLabel && error.length === 0) {
+                // fill operand should be represented in 16 bits
+                switch (value.type) {
+                    case 'decimal':
+                    case 'hexadecimal':
+                    case 'register':
+                        binary = convertToBinaryString(value.value, value.type, 16);
+                        break;
+                    case 'binary':
+                        binary = value.value.slice(2);
+                        break;
+                    case 'label':
+                        binary = convertToBinaryString(label.value.charCodeAt(0), decimal, 16);
+                        break;
+                    case 'fillCharacter': {
+                        const text = value.value.slice(1, -1);
+                        let character;
+                        if (text.length > 1) {
+                            const character = text.replace(/\\[a-zA-Z"'\\]/, (sequence) => {
+                            switch (sequence[1]) {
+                                case 'n':
+                                    return '\n';
+                                case 't':
+                                    return '\t';
+                                case 'r':
+                                    return '\r';
+                                case 'b':
+                                    return '\b';
+                                case 'f':
+                                    return '\f';
+                                case 'v':
+                                    return '\v';
+                                case '\\':
+                                    return '\\';
+                                case '"':
+                                    return '"';
+                                case '\'':
+                                    return '\'';
+                                case '0':
+                                    return '\0';
+                                }
+                            }); 
+                            binary = convertToBinaryString(character.charCodeAt(0).toString(), 'decimal', 16);
+                        } else {
+                            binary = text.charCodeAt(0).toString(2).padStart(16, '0');
+                        }
+                        break;
+                    }              
+                }
+            }
+        
             return {
                 label: label ? label[0].value : null,
                 labelStart: label ? label[0].col : null,
                 labelEnd: label ? label[0].value.length + label[0].offset : null,
-                directive: directive.value,
-                directiveStart: directive.col,
-                directiveEnd: directive.value.length + directive.offset,
-                [`${value.type}`]: value.value,
-                [`${value.type}Start`]: value.col,
-                [`${value.type}End`]: value.value.length + value.offset,
-                error: [...(errorFromLabel ? [errorFromLabel] : []), ...(error)]
+                operands: {
+                    directive: directive.value,
+                    directiveStart: directive.col,
+                    directiveEnd: directive.value.length + directive.offset,
+                    [`${value.type}`]: value.value,
+                    [`${value.type}Start`]: value.col,
+                    [`${value.type}End`]: value.value.length + value.offset
+                },
+                error: [...(errorFromLabel ? [errorFromLabel] : []), ...(error)],
+                binary: binary + `   => ${directive.value} ${value.value}`
             };
         
         } },
@@ -636,6 +764,35 @@ var grammar = {
         
             const {error, ...blkwOperandObject} = blkwOperand
         
+            let binary = '';
+            if (!errorFromLabel && error.length === 0) {
+                let magnitude;
+                let type; 
+                switch (blkwOperand.type) {
+                    case 'decimal':
+                        type = 'decimal';
+                        magnitude = parseInt(blkwOperand[type].slice(1));
+                        break;
+                    case 'binary':
+                        type = 'binary';
+                        magnitude = parseInt(blkwOperand[type].slice(2), 2);
+                        break;
+                    case 'hexadecimal':
+                        type = 'hexadecimal';
+                        magnitude = parseInt(blkwOperand[type].slice(2), 16); 
+                        break;
+                }
+                let i = 0;
+                while (i < magnitude) {
+                    binary += `0000000000000000   => ${directive.value} ${blkwOperand[type]}`;
+                    i++;
+        
+                    if (i !== magnitude) {
+                        binary += '\n';
+                    }
+                }
+            }
+        
             return {
                 label: label ? label[0].value : null,
                 labelStart: label ? label[0].col : null,
@@ -643,8 +800,11 @@ var grammar = {
                 directive: directive.value,
                 directiveStart: directive.col,
                 directiveEnd: directive.value.length + directive.offset,
-                ...blkwOperandObject,
-                error: [...(errorFromLabel ? [errorFromLabel] : []), ...error]
+                operands: {
+                    ...blkwOperandObject
+                },
+                error: [...(errorFromLabel ? [errorFromLabel] : []), ...error],
+                binary: binary
             };
         } },
     {"name": "directiveExpression$ebnf$3$subexpression$1", "symbols": [(lexer.has("label") ? {type: "label"} : label), (lexer.has("ws") ? {type: "ws"} : ws)]},
@@ -652,7 +812,9 @@ var grammar = {
     {"name": "directiveExpression$ebnf$3", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "directiveExpression", "symbols": ["directiveExpression$ebnf$3", (lexer.has("stringzDirective") ? {type: "stringzDirective"} : stringzDirective), (lexer.has("ws") ? {type: "ws"} : ws), "string"], "postprocess":  ([label, directive, ,lastOperandObject]) => {
             const errorFromLabel = label ? validateLabelName(label[0].value, label[0].offset) : null;
-            const { error, ...stringzObject } = lastOperandObject;
+            const { binary, error, ...stringzObject } = lastOperandObject;
+        
+        
             
             return {
                 label: label ? label[0].value : null,
@@ -661,8 +823,11 @@ var grammar = {
                 directive: directive.value,
                 directiveStart: directive.col,
                 directiveEnd: directive.value.length + directive.offset,
-                ...stringzObject,
-                error: [...(error || []), ...(errorFromLabel ? [errorFromLabel] : [])]
+                operands: {
+                    ...stringzObject
+                },
+                error: [...error, ...(errorFromLabel ? [errorFromLabel] : [])],
+                binary: binary + `   => .stringz ${stringzObject.stringz}`
             };
         } },
     {"name": "blkwOperand$subexpression$1", "symbols": [(lexer.has("decimal") ? {type: "decimal"} : decimal)]},
@@ -674,50 +839,81 @@ var grammar = {
                 [`${value.type}`]: value.value,
                 [`${value.type}Start`]: value.col,
                 [`${value.type}End`]: value.value.length + value.offset,
-                error: [...(error ? [error] : [])]
-            };
-        } },
-    {"name": "blkwOperand", "symbols": [(lexer.has("label") ? {type: "label"} : label), (lexer.has("ws") ? {type: "ws"} : ws), (lexer.has("minus") ? {type: "minus"} : minus), (lexer.has("ws") ? {type: "ws"} : ws), (lexer.has("label") ? {type: "label"} : label)], "postprocess":  ([label1, , , , label2]) => {
-            const errors = [];
-            let error = validateLabelName(label1.value, label1.offset);
-            if (error) {
-                errors.push(error);
-            }
-            error = validateLabelName(label2.value, label2.offset);
-            if (error) {
-                errors.push(error);
-            }
-        
-            return {
-                label1: label1.value,
-                label1Start: label1.col,
-                label1End: label1.value.length + label1.offset,
-                label2: label2.value,
-                label2Start: label2.col,
-                label2End: label2.value.length + label2.offset,
-                error: errors
+                error: [...(error ? [error] : [])],
+                type: value.type
             };
         } },
     {"name": "string", "symbols": [(lexer.has("stringzSequence") ? {type: "stringzSequence"} : stringzSequence)], "postprocess":  ([string]) => {
             const errors = [];
-            const validEscapeCharacters = ['n', 't', 'r', 'b', 'a', 'f', 'v', '\'', '"', '\\'];
-            const text = string.value.slice(1,string.value.length-1);
+            const validEscapeCharacters = ['n', 't', 'r', 'b', 'f', 'v', '\'', '"', '\\', '0'];
+            const text = string.value.slice(1,-1);
         
+            // ensure the string sequence is valid
             for (let i = 0; i < text.length; i++) {
                 if (i+1 >= text.length) {
                     if (text[i] == '\\') {
                         errors.push({semanticError: `Invalid escape sequence '${text[i]}' at index ${i+2+string.offset}`, end: i+2+string.offset});
                     }
-                } else if (text[i] == '\\' && !validEscapeCharacters.includes(text[i] + 1)) {
+                } else if (text[i] == '\\' && !validEscapeCharacters.includes(text[i+1].toLowerCase())) {
                     errors.push({semanticError: `Invalid escape sequence '${text[i]}' at index ${i+2+string.offset}`, end: i+3+string.offset});
                 }
+            }
+        
+            // if the stringz sequence is valid return its binary conversion
+            // the binary would be the 16 bit value of each character line by line
+            let binary = '';
+            if (errors.length === 0) {
+                let i = 0;
+                while (i < text.length) {
+                    let character;
+                    if (text[i] === '\\') {
+                        i++;
+                        charToPrint = text.slice(i-1, i+1);
+                        character = text[i].replace(/\\[a-zA-Z"'\\]/, (sequence) => {
+                            switch (sequence[1]) {
+                                case 'n':
+                                    return '\n';
+                                case 't':
+                                    return '\t';
+                                case 'r':
+                                    return '\r';
+                                case 'b':
+                                    return '\b';
+                                case 'f':
+                                    return '\f';
+                                case 'v':
+                                    return '\v';
+                                case '\\':
+                                    return '\\';
+                                case '"':
+                                    return '"';
+                                case '\'':
+                                    return '\'';
+                                case '0':
+                                    return '\0';
+                            }
+                        });
+                    } else {
+                        character = text[i];
+                        charToPrint = character;
+                    }
+        
+                    // a character will be represented in 16 bits
+                    let toInsert = character.charCodeAt(0).toString(2).padStart(16, '0');
+                    toInsert += `   => ${charToPrint} \n`;
+                    binary += toInsert;
+                    i++;
+                }
+                // add the last line that will represent where the directive is stored
+                binary += '0000000000000000';
             }
         
             return {
                 stringz: string.value,
                 stringzStart: string.col,
                 stringzEnd: string.value.length + string.offset,
-                error: errors
+                error: errors,
+                binary: binary
             };
         } },
     {"name": "addAndOperand", "symbols": [(lexer.has("register") ? {type: "register"} : register)], "postprocess":  ([register]) => {
@@ -729,7 +925,8 @@ var grammar = {
                 },
                 error: [],
                 binary: convertToBinaryString(register.value, register.type),
-                reservedBit: '000'
+                reservedBit: '000',
+                text: register.value
             };
         } },
     {"name": "addAndOperand", "symbols": [(lexer.has("decimal") ? {type: "decimal"} : decimal)], "postprocess":  ([decimal]) => {
@@ -742,7 +939,8 @@ var grammar = {
                 },
                 error: [...(error ? [error] : [])],
                 binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 5)),
-                reservedBit: '1'
+                reservedBit: '1',
+                text: decimal.value
             };
         } },
     {"name": "addAndOperand", "symbols": [(lexer.has("binary") ? {type: "binary"} : binary)], "postprocess":  ([binary]) => {
@@ -756,7 +954,8 @@ var grammar = {
                 },
                 error: [...(error ? [error] : [])],
                 binary: (error ? '0' : binary.value.slice(2)),
-                reservedBit: '1'
+                reservedBit: '1',
+                text: binary.value
             };
         } },
     {"name": "addAndOperand", "symbols": [(lexer.has("hexadecimal") ? {type: "hexadecimal"} : hexadecimal)], "postprocess":  ([hexadecimal]) => {
@@ -769,7 +968,8 @@ var grammar = {
                 },
                 error: [...(error ? [error] : [])],
                 binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 5)),
-                reservedBit: '1'
+                reservedBit: '1',
+                text: hexadecimal.value
             };
         } },
     {"name": "brOperand", "symbols": [(lexer.has("label") ? {type: "label"} : label)], "postprocess":  ([label]) => {
@@ -781,7 +981,8 @@ var grammar = {
                     lastOperandEnd: label.value.length + label.offset
                 },
                 error: [...(errorFromLabel ? [errorFromLabel] : [])],
-                binary: '0' // this value will be evaluated at a later point
+                binary: '0', // this value will be evaluated at a later point
+                text: label.value
             }
         } },
     {"name": "brOperand", "symbols": [(lexer.has("decimal") ? {type: "decimal"} : decimal)], "postprocess":  ([decimal]) => {
@@ -793,7 +994,8 @@ var grammar = {
                     lastOperandEnd: decimal.value.length + decimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 9))
+                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 9)),
+                text: decimal.value
             };
         } },
     {"name": "brOperand", "symbols": [(lexer.has("binary") ? {type: "binary"} : binary)], "postprocess":  ([binary]) => {
@@ -805,7 +1007,8 @@ var grammar = {
                     lastOperandEnd: binary.value.length + binary.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : binary.value.slice(2))
+                binary: (error ? '0' : binary.value.slice(2)),
+                text: binary.value
             };
         } },
     {"name": "brOperand", "symbols": [(lexer.has("hexadecimal") ? {type: "hexadecimal"} : hexadecimal)], "postprocess":  ([hexadecimal]) => {
@@ -817,7 +1020,8 @@ var grammar = {
                     lastOperandEnd: hexadecimal.value.length + hexadecimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 9))
+                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 9)),
+                text: hexadecimal.value
             };
         } },
     {"name": "jsrOperand", "symbols": [(lexer.has("label") ? {type: "label"} : label)], "postprocess":  ([label]) => {
@@ -829,7 +1033,8 @@ var grammar = {
                     lastOperandEnd: label.value.length + label.offset
                 },
                 error: [...(errorFromLabel ? [errorFromLabel] : [])],
-                binary: '0' // this value will be evaluated at a later point
+                binary: '0', // this value will be evaluated at a later point
+                text: label.value
             }
         } },
     {"name": "jsrOperand", "symbols": [(lexer.has("decimal") ? {type: "decimal"} : decimal)], "postprocess":  ([decimal]) => {
@@ -841,7 +1046,8 @@ var grammar = {
                     lastOperandEnd: decimal.value.length + decimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 11))
+                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 11)),
+                text: decimal.value
             };
         } },
     {"name": "jsrOperand", "symbols": [(lexer.has("binary") ? {type: "binary"} : binary)], "postprocess":  ([binary]) => {
@@ -853,7 +1059,8 @@ var grammar = {
                     lastOperandEnd: binary.value.length + binary.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : binary.value.slice(2))
+                binary: (error ? '0' : binary.value.slice(2)),
+                text: binary.value
             };
         } },
     {"name": "jsrOperand", "symbols": [(lexer.has("hexadecimal") ? {type: "hexadecimal"} : hexadecimal)], "postprocess":  ([hexadecimal]) => {
@@ -865,7 +1072,8 @@ var grammar = {
                     lastOperandEnd: hexadecimal.value.length + hexadecimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 11))
+                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 11)),
+                text: hexadecimal.value
             };
         } },
     {"name": "ldLdiStStiLeaOperand", "symbols": ["brOperand"], "postprocess": id},
@@ -878,7 +1086,8 @@ var grammar = {
                     lastOperandEnd: decimal.value.length + decimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 6))
+                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 6)),
+                text: decimal.value
             };
         } },
     {"name": "ldrStrOperand", "symbols": [(lexer.has("binary") ? {type: "binary"} : binary)], "postprocess":  ([binary]) => {
@@ -890,7 +1099,8 @@ var grammar = {
                     lastOperandEnd: binary.value.length + binary.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : binary.value.slice(2))
+                binary: (error ? '0' : binary.value.slice(2)),
+                text: binary.value
             };
         } },
     {"name": "ldrStrOperand", "symbols": [(lexer.has("hexadecimal") ? {type: "hexadecimal"} : hexadecimal)], "postprocess":  ([hexadecimal]) => {
@@ -902,7 +1112,8 @@ var grammar = {
                     lastOperandEnd: hexadecimal.value.length + hexadecimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 6))
+                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 6)),
+                text: hexadecimal.value
             };
         } },
     {"name": "_$ebnf$1", "symbols": []},

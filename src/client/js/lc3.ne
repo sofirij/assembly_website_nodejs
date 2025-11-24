@@ -158,7 +158,7 @@ const lexer = require('./lexer.js');
 %}
 
 input
-    ->  _ line {% (data) => JSON.stringify(data[1]) %}
+    ->  _ line {% (data) => data[1] %}
 
 line
     ->  (%label %ws):? %comment
@@ -201,20 +201,36 @@ line
         } %}
 
     |   directiveExpression (%ws | %ws %comment):?
-    {% (data) => {
-        const {error, ...directiveExpressionObject} = data[0];
-        const errorFromDirectiveExpression = error;
-        const comment = data[1] ? data[1][1] : null;
+        {% (data) => {
+            const {error, ...directiveExpressionObject} = data[0];
+            const errorFromDirectiveExpression = error;
+            const comment = data[1] ? data[1][1] : null;
 
-        return {
-            type: 'directiveExpressionLine',
-            ...directiveExpressionObject,
-            comment: (comment ? comment.value : null),
-            commentStart: (comment ? comment.col : null),
-            commentEnd: (comment ? comment.offset+comment.value.length : null),
-            errors: errorFromDirectiveExpression
-        };
-    } %}
+            return {
+                type: 'directiveExpressionLine',
+                ...directiveExpressionObject,
+                comment: (comment ? comment.value : null),
+                commentStart: (comment ? comment.col : null),
+                commentEnd: (comment ? comment.offset+comment.value.length : null),
+                errors: errorFromDirectiveExpression
+            };
+        } %}
+    
+    |   %label
+        {% ([label]) => {
+            const errorFromLabel = validateLabelName(label.value, label.offset);
+            
+            return {
+                type: 'labelLine',
+                label: label.value,
+                labelStart: label.col,
+                labelEnd: label.value.length,
+                comment: null,
+                commentStart: null,
+                commentEnd: null,
+                errors: [...(errorFromLabel ? [errorFromLabel] : [])]
+            }
+        } %}
 
 
 
@@ -244,7 +260,7 @@ operandExpression
                     ...lastOperand.operand
                 },
                 error: [...lastOperand.error],
-                binary: binary
+                binary: binary + `   => ${opcode.text} ${destinationRegister.value}, ${sourceRegister1.value}, ${lastOperand.text}`
             };
         } %}
 
@@ -291,7 +307,7 @@ operandExpression
                     ...lastOperand.operand
                 },
                 error: [...lastOperand.error],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${lastOperand.text}`
             }
         } %}
     
@@ -302,7 +318,7 @@ operandExpression
             const binaryBaseRegister = convertToBinaryString(register.value, register.type);
             const reservedBit = '0';
 
-            const binary = binaryOpcode + delimeter + (reservedBit+delimeter).repeat(3) + binaryBaseRegister + (delimeter+reservedBit).repeat(6);
+            const binary = binaryOpcode + delimeter + (reservedBit).repeat(3) + delimeter + binaryBaseRegister + delimeter + (reservedBit).repeat(6);
 
             return {
                 opcode: opcode.value,
@@ -314,7 +330,7 @@ operandExpression
                     baseRegisterEnd: register.offset + register.value.length
                 },
                 error: [],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${register.value}`
             }
         } %}
     
@@ -325,7 +341,7 @@ operandExpression
             const binaryBaseRegister = convertToBinaryString(register.value, register.type);
             const reservedBit = '0';
 
-            const binary = binaryOpcode + delimeter + (reservedBit+delimeter).repeat(3) + binaryBaseRegister + (delimeter+reservedBit).repeat(6);
+            const binary = binaryOpcode + delimeter + (reservedBit).repeat(3) + delimeter + binaryBaseRegister + delimeter + (reservedBit).repeat(6);
 
             return {
                 opcode: opcode.value,
@@ -337,7 +353,7 @@ operandExpression
                     baseRegisterEnd: register.offset + register.value.length
                 },
                 error: [],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${register.value}`
             }
         } %}
     
@@ -358,46 +374,71 @@ operandExpression
                     ...lastOperand.operand
                 },
                 error: [...lastOperand.error],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${lastOperand.text}`
             }
         } %}
 
     |   %ldLdiStStiLeaOpcode %ws %register %operandSeparator ldLdiStStiLeaOperand
-        {% ([opcode, , destinationRegister, , lastOperand]) => {
+        {% ([opcode, , register, , lastOperand]) => {
+            // register can either be a source register or a destination register
             let binaryOpcode;
-
-            switch (opcode.value) {
-                case 'ld':
-                    binaryOpcode = '0010';
-                    break;
-                case 'ldi':
-                    binaryOpcode = '1010';
-                    break;
-                case 'st':
-                    binaryOpcode = '0011';
-                    break;
-                case 'sti':
-                    binaryOpcode = '1011';
-                    break;
-            }
+            let registerName;
 
             const delimeter = ',';
-            const binaryDestinationRegister = convertToBinaryString(destinationRegister.value, destinationRegister.type);
             const binaryLastOperand = lastOperand.binary;
-            const binary = binaryOpcode + delimeter + binaryDestinationRegister + delimeter + binaryLastOperand;
+
+            switch (opcode.value) {
+                case 'ld': {
+                    binaryOpcode = '0010';
+                    registerName = 'destinationRegister';
+                    const binaryDestinationRegister = convertToBinaryString(register.value, register.type);
+                    binary = binaryOpcode + delimeter + binaryDestinationRegister + delimeter + binaryLastOperand;
+                    break;
+                }
+                case 'ldi': {
+                    binaryOpcode = '1010';
+                    registerName = 'destinationRegister';
+                    const binaryDestinationRegister = convertToBinaryString(register.value, register.type);
+                    binary = binaryOpcode + delimeter + binaryDestinationRegister + delimeter + binaryLastOperand;
+                    break;
+                }
+                case 'lea': {
+                    binaryOpcode = '1110';
+                    registerName = 'destinationRegister';
+                    const binaryDestinationRegister = convertToBinaryString(register.value, register.type);
+                    binary = binaryOpcode + delimeter + binaryDestinationRegister + delimeter + binaryLastOperand;
+                    break;
+                }
+                case 'st': {
+                    binaryOpcode = '0011';
+                    registerName = 'sourceRegister';
+                    const binarySourceRegister = convertToBinaryString(register.value, register.type);
+                    binary = binaryOpcode + delimeter + binarySourceRegister + delimeter + binaryLastOperand;
+                    break;
+                }
+                case 'sti': {
+                    binaryOpcode = '1011';
+                    registerName = 'sourceRegister';
+                    const binarySourceRegister = convertToBinaryString(register.value, register.type);
+                    binary = binaryOpcode + delimeter + binarySourceRegister + delimeter + binaryLastOperand;
+                    break;
+                }
+            }
+
+        
 
             return {
                 opcode: opcode.value,
                 opcodeStart: opcode.col,
                 opcodeEnd: opcode.offset + opcode.value.length,
                 operands: {
-                    destinationRegister: destinationRegister.value,
-                    destinationRegisterStart: destinationRegister.col,
-                    destinationRegisterEnd: destinationRegister.offset + destinationRegister.value.length,
+                    [registerName]: register.value,
+                    [`${registerName}End`]: register.col,
+                    [`${registerName}Start`]: register.offset + register.value.length,
                     ...lastOperand.operand
                 },
                 error: [...lastOperand.error],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${register.value}, ${lastOperand.text}`
             };
         } %}
     
@@ -441,7 +482,7 @@ operandExpression
                     ...lastOperand.operand
                 },
                 error: [...lastOperand.error],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${register.value}, ${baseRegister.value}, ${lastOperand.text}`
             };
         } %}
     
@@ -449,7 +490,7 @@ operandExpression
         {% ([opcode, , destinationRegister, , sourceRegister]) => {
             const delimeter = ',';
             const binaryOpcode = '1001';
-            const reservedBits = '1,1,1,1,1,1';
+            const reservedBits = '111111';
             const binaryDestinationRegister = convertToBinaryString(destinationRegister.value, destinationRegister.type);
             const binarySourceRegister = convertToBinaryString(sourceRegister.value, sourceRegister.type);
 
@@ -467,7 +508,7 @@ operandExpression
                     sourceRegisterEnd: sourceRegister.value.length + sourceRegister.offset
                 },
                 error: [],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${destinationRegister.value}, ${sourceRegister.value}`
             }
         } %} 
 
@@ -475,7 +516,7 @@ operandExpression
         {% ([opcode]) => {
             const binaryOpcode = '1100';
             const delimeter = ',';
-            const reservedBits = '0,0,0,1,1,1,0,0,0,0,0,0';
+            const reservedBits = '000111000000';
 
             const binary = binaryOpcode + delimeter + reservedBits;
 
@@ -485,7 +526,7 @@ operandExpression
                 opcodeEnd: opcode.offset + opcode.value.length,
                 operands: {},
                 error: [],
-                binary: binary
+                binary: binary + `   => ${opcode.value}`
             }
         } %} 
 
@@ -493,7 +534,7 @@ operandExpression
         {% ([opcode]) => {
             const binaryOpcode = '1000';
             const delimeter = ',';
-            const reservedBits = '0,0,0,0,0,0,0,0';
+            const reservedBits = '000000000000';
 
             const binary = binaryOpcode + delimeter + reservedBits;
 
@@ -503,7 +544,7 @@ operandExpression
                 opcodeEnd: opcode.offset + opcode.value.length,
                 operands: {},
                 error: [],
-                binary: binary
+                binary: binary + `   => ${opcode.value}`
             }
         } %} 
 
@@ -516,7 +557,7 @@ operandExpression
             const delimeter = ',';
 
             const binary = binaryOpcode + delimeter + reservedBits + delimeter + binaryTrapVector;
-            
+
             const errorFromTrapVector = validateTrapVector(trapVector.value, trapVector.type, trapVector.offset);
             return ({
                 opcode: opcode.value,
@@ -528,18 +569,47 @@ operandExpression
                     trapVectorEnd: trapVector.offset + trapVector.value.length
                 },
                 error: [...(errorFromTrapVector ? [errorFromTrapVector] : [])],
-                binary: binary
+                binary: binary + `   => ${opcode.value} ${trapVector.value}`
             })
         } %}
     
     |   (%getcOpcode|%outOpcode|%putsOpcode|%inOpcode|%putspOpcode|%haltOpcode)
         {% ([[opcode]]) => {
+            const binaryOpcode = '1111';
+            const delimeter = ',';
+            const reservedBits = '0000';
+            let binaryTrapVector;
+
+            switch (opcode.value) {
+                case 'getc':
+                    binaryTrapVector = '010100';
+                    break;
+                case 'out':
+                    binaryTrapVector = '010101';
+                    break;
+                case 'puts':
+                    binaryTrapVector = '010110';
+                    break;
+                case 'in':
+                    binaryTrapVector = '010111';
+                    break;
+                case 'putsp':
+                    binaryTrapVector = '011000';
+                    break;
+                case 'halt':
+                    binaryTrapVector = '011001';
+                    break;
+            }
+
+            const binary = binaryOpcode + delimeter + reservedBits + delimeter + binaryTrapVector;
+
             return {
                 opcode: opcode.value,
                 opcodeStart: opcode.col,
                 opcodeEnd: opcode.value.length + opcode.offset,
                 operands: {},
-                error: {}
+                error: [],
+                binary: binary + `   => ${opcode.value}`
             };
         } %}
 
@@ -553,10 +623,13 @@ directiveExpression
                 directive: directive.value,
                 directiveStart: directive.col,
                 directiveEnd: directive.value.length + directive.offset,
-                address: address.value,
-                addressStart: address.col,
-                addressEnd: address.value.length + address.offset,
-                error: [...(errorFromAddress ? [errorFromAddress] : [])]
+                operands: {
+                    address: address.value,
+                    addressStart: address.col,
+                    addressEnd: address.value.length + address.offset
+                },
+                error: [...(errorFromAddress ? [errorFromAddress] : [])],
+                binary: ''
             };
         }%}
 
@@ -566,7 +639,9 @@ directiveExpression
                 directive: directive.value,
                 directiveStart: directive.col,
                 directiveEnd: directive.value.length + directive.offset,
-                error: []
+                operands: {},
+                error: [],
+                binary: ''
             };
         } %}
 
@@ -611,7 +686,7 @@ directiveExpression
                             error.push({semanticError: `Invalid character '${sequence}' should be a single character at index {value.col}`, end: value.offset+value.value.length});
                         } else {
                             const escapeCharacter = sequence[1];
-                            const validEscapeCharacters = ['n', 't', 'r', 'b', 'a', 'f', 'v', '\'', '"', '\\'];
+                            const validEscapeCharacters = ['n', 't', 'r', 'b', 'f', 'v', '\'', '"', '\\', '\0'];
                             if (!validEscapeCharacters.includes(escapeCharacter)) {
                                 error.push({semanticError: `Invalid escape sequence '${value.value}' at index ${value.col}`, end: value.offset+value.value.length});
                             }
@@ -622,17 +697,72 @@ directiveExpression
                     break;
             }
 
+            let binary = '0'
+            if (!errorFromLabel && error.length === 0) {
+                // fill operand should be represented in 16 bits
+                switch (value.type) {
+                    case 'decimal':
+                    case 'hexadecimal':
+                    case 'register':
+                        binary = convertToBinaryString(value.value, value.type, 16);
+                        break;
+                    case 'binary':
+                        binary = value.value.slice(2);
+                        break;
+                    case 'label':
+                        binary = convertToBinaryString(label.value.charCodeAt(0), decimal, 16);
+                        break;
+                    case 'fillCharacter': {
+                        const text = value.value.slice(1, -1);
+                        let character;
+                        if (text.length > 1) {
+                            const character = text.replace(/\\[a-zA-Z"'\\]/, (sequence) => {
+                            switch (sequence[1]) {
+                                case 'n':
+                                    return '\n';
+                                case 't':
+                                    return '\t';
+                                case 'r':
+                                    return '\r';
+                                case 'b':
+                                    return '\b';
+                                case 'f':
+                                    return '\f';
+                                case 'v':
+                                    return '\v';
+                                case '\\':
+                                    return '\\';
+                                case '"':
+                                    return '"';
+                                case '\'':
+                                    return '\'';
+                                case '0':
+                                    return '\0';
+                                }
+                            }); 
+                            binary = convertToBinaryString(character.charCodeAt(0).toString(), 'decimal', 16);
+                        } else {
+                            binary = text.charCodeAt(0).toString(2).padStart(16, '0');
+                        }
+                        break;
+                    }              
+                }
+            }
+
             return {
                 label: label ? label[0].value : null,
                 labelStart: label ? label[0].col : null,
                 labelEnd: label ? label[0].value.length + label[0].offset : null,
-                directive: directive.value,
-                directiveStart: directive.col,
-                directiveEnd: directive.value.length + directive.offset,
-                [`${value.type}`]: value.value,
-                [`${value.type}Start`]: value.col,
-                [`${value.type}End`]: value.value.length + value.offset,
-                error: [...(errorFromLabel ? [errorFromLabel] : []), ...(error)]
+                operands: {
+                    directive: directive.value,
+                    directiveStart: directive.col,
+                    directiveEnd: directive.value.length + directive.offset,
+                    [`${value.type}`]: value.value,
+                    [`${value.type}Start`]: value.col,
+                    [`${value.type}End`]: value.value.length + value.offset
+                },
+                error: [...(errorFromLabel ? [errorFromLabel] : []), ...(error)],
+                binary: binary + `   => ${directive.value} ${value.value}`
             };
 
         } %}
@@ -643,6 +773,35 @@ directiveExpression
 
             const {error, ...blkwOperandObject} = blkwOperand
 
+            let binary = '';
+            if (!errorFromLabel && error.length === 0) {
+                let magnitude;
+                let type; 
+                switch (blkwOperand.type) {
+                    case 'decimal':
+                        type = 'decimal';
+                        magnitude = parseInt(blkwOperand[type].slice(1));
+                        break;
+                    case 'binary':
+                        type = 'binary';
+                        magnitude = parseInt(blkwOperand[type].slice(2), 2);
+                        break;
+                    case 'hexadecimal':
+                        type = 'hexadecimal';
+                        magnitude = parseInt(blkwOperand[type].slice(2), 16); 
+                        break;
+                }
+                let i = 0;
+                while (i < magnitude) {
+                    binary += `0000000000000000   => ${directive.value} ${blkwOperand[type]}`;
+                    i++;
+
+                    if (i !== magnitude) {
+                        binary += '\n';
+                    }
+                }
+            }
+
             return {
                 label: label ? label[0].value : null,
                 labelStart: label ? label[0].col : null,
@@ -650,15 +809,20 @@ directiveExpression
                 directive: directive.value,
                 directiveStart: directive.col,
                 directiveEnd: directive.value.length + directive.offset,
-                ...blkwOperandObject,
-                error: [...(errorFromLabel ? [errorFromLabel] : []), ...error]
+                operands: {
+                    ...blkwOperandObject
+                },
+                error: [...(errorFromLabel ? [errorFromLabel] : []), ...error],
+                binary: binary
             };
         } %}
 
     |   (%label %ws):? %stringzDirective %ws string
         {% ([label, directive, ,lastOperandObject]) => {
             const errorFromLabel = label ? validateLabelName(label[0].value, label[0].offset) : null;
-            const { error, ...stringzObject } = lastOperandObject;
+            const { binary, error, ...stringzObject } = lastOperandObject;
+
+
             
             return {
                 label: label ? label[0].value : null,
@@ -667,8 +831,11 @@ directiveExpression
                 directive: directive.value,
                 directiveStart: directive.col,
                 directiveEnd: directive.value.length + directive.offset,
-                ...stringzObject,
-                error: [...(error || []), ...(errorFromLabel ? [errorFromLabel] : [])]
+                operands: {
+                    ...stringzObject
+                },
+                error: [...error, ...(errorFromLabel ? [errorFromLabel] : [])],
+                binary: binary + `   => .stringz ${stringzObject.stringz}`
             };
         } %}
 
@@ -681,55 +848,85 @@ blkwOperand
                 [`${value.type}`]: value.value,
                 [`${value.type}Start`]: value.col,
                 [`${value.type}End`]: value.value.length + value.offset,
-                error: [...(error ? [error] : [])]
+                error: [...(error ? [error] : [])],
+                type: value.type
             };
         } %}
     
-    |   %label %ws %minus %ws %label
-        {% ([label1, , , , label2]) => {
-            const errors = [];
-            let error = validateLabelName(label1.value, label1.offset);
-            if (error) {
-                errors.push(error);
-            }
-            error = validateLabelName(label2.value, label2.offset);
-            if (error) {
-                errors.push(error);
-            }
-
-            return {
-                label1: label1.value,
-                label1Start: label1.col,
-                label1End: label1.value.length + label1.offset,
-                label2: label2.value,
-                label2Start: label2.col,
-                label2End: label2.value.length + label2.offset,
-                error: errors
-            };
-        } %}
 
 string
     ->  %stringzSequence
         {% ([string]) => {
             const errors = [];
-            const validEscapeCharacters = ['n', 't', 'r', 'b', 'a', 'f', 'v', '\'', '"', '\\'];
-            const text = string.value.slice(1,string.value.length-1);
+            const validEscapeCharacters = ['n', 't', 'r', 'b', 'f', 'v', '\'', '"', '\\', '0'];
+            const text = string.value.slice(1,-1);
 
+            // ensure the string sequence is valid
             for (let i = 0; i < text.length; i++) {
                 if (i+1 >= text.length) {
                     if (text[i] == '\\') {
                         errors.push({semanticError: `Invalid escape sequence '${text[i]}' at index ${i+2+string.offset}`, end: i+2+string.offset});
                     }
-                } else if (text[i] == '\\' && !validEscapeCharacters.includes(text[i] + 1)) {
+                } else if (text[i] == '\\' && !validEscapeCharacters.includes(text[i+1].toLowerCase())) {
                     errors.push({semanticError: `Invalid escape sequence '${text[i]}' at index ${i+2+string.offset}`, end: i+3+string.offset});
                 }
+            }
+
+            // if the stringz sequence is valid return its binary conversion
+            // the binary would be the 16 bit value of each character line by line
+            let binary = '';
+            if (errors.length === 0) {
+                let i = 0;
+                while (i < text.length) {
+                    let character;
+                    if (text[i] === '\\') {
+                        i++;
+                        charToPrint = text.slice(i-1, i+1);
+                        character = text[i].replace(/\\[a-zA-Z"'\\]/, (sequence) => {
+                            switch (sequence[1]) {
+                                case 'n':
+                                    return '\n';
+                                case 't':
+                                    return '\t';
+                                case 'r':
+                                    return '\r';
+                                case 'b':
+                                    return '\b';
+                                case 'f':
+                                    return '\f';
+                                case 'v':
+                                    return '\v';
+                                case '\\':
+                                    return '\\';
+                                case '"':
+                                    return '"';
+                                case '\'':
+                                    return '\'';
+                                case '0':
+                                    return '\0';
+                            }
+                        });
+                    } else {
+                        character = text[i];
+                        charToPrint = character;
+                    }
+
+                    // a character will be represented in 16 bits
+                    let toInsert = character.charCodeAt(0).toString(2).padStart(16, '0');
+                    toInsert += `   => ${charToPrint} \n`;
+                    binary += toInsert;
+                    i++;
+                }
+                // add the last line that will represent where the directive is stored
+                binary += '0000000000000000';
             }
 
             return {
                 stringz: string.value,
                 stringzStart: string.col,
                 stringzEnd: string.value.length + string.offset,
-                error: errors
+                error: errors,
+                binary: binary
             };
         } %}
         
@@ -751,7 +948,8 @@ addAndOperand
                 },
                 error: [],
                 binary: convertToBinaryString(register.value, register.type),
-                reservedBit: '000'
+                reservedBit: '000',
+                text: register.value
             };
         } %}
 
@@ -766,7 +964,8 @@ addAndOperand
                 },
                 error: [...(error ? [error] : [])],
                 binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 5)),
-                reservedBit: '1'
+                reservedBit: '1',
+                text: decimal.value
             };
         } %}
 
@@ -782,7 +981,8 @@ addAndOperand
                 },
                 error: [...(error ? [error] : [])],
                 binary: (error ? '0' : binary.value.slice(2)),
-                reservedBit: '1'
+                reservedBit: '1',
+                text: binary.value
             };
         } %}
 
@@ -797,7 +997,8 @@ addAndOperand
                 },
                 error: [...(error ? [error] : [])],
                 binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 5)),
-                reservedBit: '1'
+                reservedBit: '1',
+                text: hexadecimal.value
             };
         } %}
 
@@ -813,7 +1014,8 @@ brOperand
                     lastOperandEnd: label.value.length + label.offset
                 },
                 error: [...(errorFromLabel ? [errorFromLabel] : [])],
-                binary: '0' // this value will be evaluated at a later point
+                binary: '0', // this value will be evaluated at a later point
+                text: label.value
             }
         } %}
 
@@ -827,7 +1029,8 @@ brOperand
                     lastOperandEnd: decimal.value.length + decimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 9))
+                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 9)),
+                text: decimal.value
             };
         } %}
 
@@ -841,7 +1044,8 @@ brOperand
                     lastOperandEnd: binary.value.length + binary.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : binary.value.slice(2))
+                binary: (error ? '0' : binary.value.slice(2)),
+                text: binary.value
             };
         } %}
 
@@ -855,7 +1059,8 @@ brOperand
                     lastOperandEnd: hexadecimal.value.length + hexadecimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 9))
+                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 9)),
+                text: hexadecimal.value
             };
         } %}
 
@@ -871,7 +1076,8 @@ jsrOperand
                     lastOperandEnd: label.value.length + label.offset
                 },
                 error: [...(errorFromLabel ? [errorFromLabel] : [])],
-                binary: '0' // this value will be evaluated at a later point
+                binary: '0', // this value will be evaluated at a later point
+                text: label.value
             }
         } %}
     
@@ -885,7 +1091,8 @@ jsrOperand
                     lastOperandEnd: decimal.value.length + decimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 11))
+                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 11)),
+                text: decimal.value
             };
         } %}
 
@@ -899,7 +1106,8 @@ jsrOperand
                     lastOperandEnd: binary.value.length + binary.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : binary.value.slice(2))
+                binary: (error ? '0' : binary.value.slice(2)),
+                text: binary.value
             };
         } %}
 
@@ -913,7 +1121,8 @@ jsrOperand
                     lastOperandEnd: hexadecimal.value.length + hexadecimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 11))
+                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 11)),
+                text: hexadecimal.value
             };
         } %}
 
@@ -933,7 +1142,8 @@ ldrStrOperand
                     lastOperandEnd: decimal.value.length + decimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 6))
+                binary: (error ? '0' : convertToBinaryString(decimal.value, decimal.type, 6)),
+                text: decimal.value
             };
         } %}
 
@@ -947,7 +1157,8 @@ ldrStrOperand
                     lastOperandEnd: binary.value.length + binary.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : binary.value.slice(2))
+                binary: (error ? '0' : binary.value.slice(2)),
+                text: binary.value
             };
         } %}
 
@@ -961,7 +1172,8 @@ ldrStrOperand
                     lastOperandEnd: hexadecimal.value.length + hexadecimal.offset
                 },
                 error: [...(error ? [error] : [])],
-                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 6))
+                binary: (error ? '0' : convertToBinaryString(hexadecimal.value, hexadecimal.type, 6)),
+                text: hexadecimal.value
             };
         } %}
 
