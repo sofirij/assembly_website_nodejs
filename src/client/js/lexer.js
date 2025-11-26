@@ -2,7 +2,7 @@ const moo = require('moo');
 const lexer = moo.compile({
     operandSeparator: /[ \t]*,[ \t]*/,
     ws: /[ \t]+/,
-    register: { match: /[rR][0-7](?![^ \t])/, value: s => s.toLowerCase() },
+    register: { match: /[rR][0-7](?![^ \t,])/, value: s => s.toLowerCase() },
     addAndOpcode: { match: /(?:[aA][dD][dD]|[aA][nN][dD])(?![^ \t])/, value: s => s.toLowerCase() },
     brOpcode: { match: /[bB][rR][nN]?[zZ]?[pP]?(?![^ \t])/, value: s => s.toLowerCase() },
     jmpOpcode: { match: /[jJ][mM][pP](?![^ \t])/, value: s => s.toLowerCase() },
