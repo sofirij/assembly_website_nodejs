@@ -1,7 +1,8 @@
 const moo = require('moo');
 const lexer = moo.compile({
+    operandSeparator: /[ \t]*,[ \t]*/,
     ws: /[ \t]+/,
-    register: { match: /[rR][0-7](?![^ \t,])/, value: s => s.toLowerCase() },
+    register: { match: /[rR][0-7](?![^ \t])/, value: s => s.toLowerCase() },
     addAndOpcode: { match: /(?:[aA][dD][dD]|[aA][nN][dD])(?![^ \t])/, value: s => s.toLowerCase() },
     brOpcode: { match: /[bB][rR][nN]?[zZ]?[pP]?(?![^ \t])/, value: s => s.toLowerCase() },
     jmpOpcode: { match: /[jJ][mM][pP](?![^ \t])/, value: s => s.toLowerCase() },
@@ -22,7 +23,6 @@ const lexer = moo.compile({
     decimal: /#(?:[+-]?[0-9]+)(?![^ \t])/,
     binary: { match: /0[bB][0-1]+(?![^ \t])/, value: s => s.toLowerCase() },
     hexadecimal: { match: /0[xX][0-9a-fA-F]+(?![^ \t])/, value: s => s.toLowerCase() },
-    operandSeparator: /[ \t]*,[ \t]*/,
     endDirective: { match: /\.[eE][nN][dD](?![^ \t])/, value: s => s.toLowerCase() },
     origDirective: { match: /\.[oO][rR][iI][gG](?![^ \t])/, value: s => s.toLowerCase() },
     fillDirective: { match: /\.[fF][iI][lL][lL](?![^ \t])/},
