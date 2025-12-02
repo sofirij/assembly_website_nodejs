@@ -1,5 +1,6 @@
 const moo = require('moo');
 const lexer = moo.compile({
+    comment: /;.*/,
     operandSeparator: /[ \t]*,[ \t]*/,
     ws: /[ \t]+/,
     register: { match: /[rR][0-7](?![^ \t,])/, value: s => s.toLowerCase() },
@@ -28,9 +29,8 @@ const lexer = moo.compile({
     fillDirective: { match: /\.[fF][iI][lL][lL](?![^ \t])/},
     blkwDirective: { match: /\.[bB][lL][kK][wW](?![^ \t])/, value: s => s.toLowerCase() },
     stringzDirective: { match: /\.[sS][tT][rR][iI][nN][gG][zZ](?![^ \t])/, value: s => s.toLowerCase() },
-    comment: /;[^\n]*/,
-    fillCharacter: /'.*'/,
-    stringzSequence: /".*"/,
+    fillCharacter: /'.*'(?![^ \t])/,
+    stringzSequence: /".*"(?![^ \t])/,
     label: /[a-zA-Z][a-zA-Z0-9_]*:?/,
     error: /\S+/,
 });
