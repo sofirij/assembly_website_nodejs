@@ -29,4 +29,16 @@ function clearBinaryView(view) {
     });
 }
 
-module.exports = {simulateTab, displayBinaryCode, clearBinaryView};
+// insert text at end of codemirror view
+function viewInsertAtEnd(view, toInsert) {
+    const length = view.state.doc.length;
+    view.dispatch({
+        changes: {
+            from: length,
+            to: length,
+            insert: toInsert + '\n'
+        }
+    });
+}
+
+module.exports = {simulateTab, displayBinaryCode, clearBinaryView, viewInsertAtEnd};

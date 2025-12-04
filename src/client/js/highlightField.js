@@ -30,7 +30,7 @@ const highlightField = StateField.define({
             tr.changes.iterChanges((from, to, fromA, toA, inserted) => {
                 const startLineNew = tr.state.doc.lineAt(fromA).number;
                 const endLineNew = tr.state.doc.lineAt(toA).number;
-                console.log(`Line ${startLineNew} to ${endLineNew}\n`);
+                // console.log(`Line ${startLineNew} to ${endLineNew}\n`);
                 uniqueAffectedLines.add(startLineNew);
                 uniqueAffectedLines.add(endLineNew);
 
@@ -40,14 +40,14 @@ const highlightField = StateField.define({
                     const lineStart = line.from;
                     let canBeLabel = true;
 
-                    console.log(lineText);
+                    // console.log(lineText);
                     
                     lexer.reset(lineText);
 
                     while ((token = lexer.next())) {
                         if (token.type === 'error') {
-                            console.log(`Lexer error on line ${pos}, column${token.col}\n`);
-                            console.log(`Unmatched text: '${token.text}'\n`);
+                            // console.log(`Lexer error on line ${pos}, column${token.col}\n`);
+                            // console.log(`Unmatched text: '${token.text}'\n`);
                             newDecos.push(errorHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
                             continue;
                         }
@@ -72,7 +72,7 @@ const highlightField = StateField.define({
                             case 'haltOpcode': {
                                 const start = lineStart + token.col - 1;
                                 const end = lineStart + token.offset + token.text.length;
-                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                // console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
                                 newDecos.push(opcodeHighlight.range(start, end));
                                 break;
                             }   
@@ -83,14 +83,14 @@ const highlightField = StateField.define({
                             case 'stringzDirective':{
                                 const start = lineStart + token.col - 1;
                                 const end = lineStart + token.offset + token.text.length;
-                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                // console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
                                 newDecos.push(directiveHighlight.range(start, end));
                                 break;
                             }   
                             case 'register':{
                                 const start = lineStart + token.col - 1;
                                 const end = lineStart + token.offset + token.text.length;
-                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                // console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
                                 newDecos.push(registerHighlight.range(start, end));
                                 break;
                             }   
@@ -101,30 +101,30 @@ const highlightField = StateField.define({
                             case 'stringzSequence':{
                                 const start = lineStart + token.col - 1;
                                 const end = lineStart + token.offset + token.text.length;
-                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                // console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
                                 newDecos.push(constantHighlight.range(start, end));
                                 break;
                             }   
                             case 'label':{
                                 const start = lineStart + token.col - 1;
                                 const end = lineStart + token.offset + token.text.length;
-                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                // console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
                                 if (canBeLabel) {
                                     newDecos.push(labelHighlight.range(start, end));
                                 } else {
                                     newDecos.push(labelOperandHighlight.range(start, end));
                                 }
+                                canBeLabel = false;
                                 break;
                             }   
                             case 'comment':{
                                 const start = lineStart + token.col - 1;
                                 const end = lineStart + token.offset + token.text.length;
-                                console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
+                                // console.log(`Token - ${token.text}, Start - ${start}, End - ${end}\n`);
                                 newDecos.push(commentHighlight.range(start, end));
                                 break;
                             }   
                         }
-                        canBeLabel = false;
                     }
                 }
             });
