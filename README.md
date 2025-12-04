@@ -15,7 +15,6 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Any errors whether semantic or syntactic, will be pointed out in a user friendly manner (still in dev)
 - If there are no errors, the assembled version of your code would be shown in a human readable format (i.e  the binary code with a description of the assembly before conversion)
 - The binary code is displayed in the read-only binary editor
-- Option to switch to a simulator to see how the program would be executed (still in dev)
 
 ## Getting Started
 
@@ -47,3 +46,4 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Linting
 - Containerization (with Docker)
 - Deploying the backend online
+- Option to switch to a simulator to see how the program would be executed (still in dev)
