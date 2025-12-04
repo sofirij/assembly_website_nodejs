@@ -6,7 +6,8 @@ module.exports = {
     entry: [
         './src/client/js/index.js',
         './src/client/js/compile.js',
-        './src/client/js/lexer.js'
+        './src/client/js/lexer.js',
+        './src/client/js/grammarUtils.js',
     ],
     output: {
         path: path.resolve(__dirname + '/dist'),
