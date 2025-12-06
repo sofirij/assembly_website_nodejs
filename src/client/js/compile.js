@@ -45,8 +45,11 @@ assembleButton.addEventListener('click', () => {
                 const result = parser.results[0];
 
                 // check for errors before doing anything
-                if (result.errors > 0) {
+                if (result.errors.length > 0) {
                     console.log('Semantic error in assembly on line ' + line);
+                    result.errors.forEach(error => {
+                        console.log(error.semanticError + ' on line ' + line);
+                    });
                     return;
                 }
 
@@ -91,7 +94,7 @@ assembleButton.addEventListener('click', () => {
     for (let line = 1; line <= lines; line++) {
         const text = assemblyView.state.doc.line(line).text;
         const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-        console.log(text);
+        // console.log(text);
 
         // do nothing on empty lines before the .orig directive
         if (text.trim() === '') {

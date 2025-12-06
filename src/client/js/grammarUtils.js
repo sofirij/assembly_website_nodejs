@@ -13,7 +13,7 @@ function validateDecimalWithinRange(decimal, bits, offset) {
     decimal = parseInt(decimal.slice(1));
     
     if (decimal < min || decimal > max) {
-        return {semanticError: `Decimal value '${decimal}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, end: decimal.length + offset};
+        return {semanticError: `Decimal value '${decimalString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, end: decimal.length + offset};
     }
 }
 

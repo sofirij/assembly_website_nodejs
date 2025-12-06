@@ -524,6 +524,8 @@ directiveExpression
                         error.push(hexadecimalError);
                     }
                     break;
+                // no need to check for errors here because invalid characters wouldn't even parse
+                /*
                 case "fillCharacter":
                     const sequence = value.value.slice(1, value.value.length-1);
 
@@ -544,6 +546,7 @@ directiveExpression
                         error.push({semanticError: `Invalid character '${sequence}' should be a single character at index ${value.col}`, end: value.offset+value.value.length});
                     }
                     break;
+                */
             }
 
             let binary = '0'
@@ -710,6 +713,8 @@ string
             const validEscapeCharacters = ['n', 't', 'r', 'b', 'f', 'v', '\'', '"', '\\', '0'];
             const text = string.value.slice(1,-1);
 
+            // no need to check this anymore because invalid string will not parse
+            /*
             // ensure the string sequence is valid
             for (let i = 0; i < text.length; i++) {
                 if (i+1 >= text.length) {
@@ -719,7 +724,7 @@ string
                 } else if (text[i] == '\\' && !validEscapeCharacters.includes(text[i+1].toLowerCase())) {
                     errors.push({semanticError: `Invalid escape sequence '${text[i]}' at index ${i+2+string.offset}`, end: i+3+string.offset});
                 }
-            }
+            }*/
 
             // if the stringz sequence is valid return its binary conversion
             // the binary would be the 16 bit value of each character line by line
