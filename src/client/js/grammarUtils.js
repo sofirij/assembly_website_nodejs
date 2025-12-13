@@ -1,7 +1,7 @@
 function validateLabelName(name, offset) {
     // labels should have a max length of 20
     if (name.length > 20) {
-        return {semanticError : `Label name '${name}' is too long (max 20 characters) at index ${offset + 1}`, end: name.length + offset};
+        return {semanticError : `Label name '${name}' is too long (max 20 characters) at index ${offset + 1}`, start: offset, end: name.length + offset};
     }
 }
 
@@ -13,7 +13,7 @@ function validateDecimalWithinRange(decimal, bits, offset) {
     decimal = parseInt(decimal.slice(1));
     
     if (decimal < min || decimal > max) {
-        return {semanticError: `Decimal value '${decimalString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, end: decimal.length + offset};
+        return {semanticError: `Decimal value '${decimalString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, start: offset, end: decimalString.length + offset};
     }
 }
 
@@ -30,7 +30,7 @@ function validateHexadecimalWithinRange(hexadecimal, bits, offset) {
     const max = negativeThreshold - 1;
 
     if (hexadecimal >= maxVal) {
-        return {semanticError: `Hexadecimal value '${hexadecimalString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, end: hexadecimalString.length + offset};
+        return {semanticError: `Hexadecimal value '${hexadecimalString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, start: offset, end: hexadecimalString.length + offset};
     }
 
     if (hexadecimal >= negativeThreshold) {
@@ -38,7 +38,7 @@ function validateHexadecimalWithinRange(hexadecimal, bits, offset) {
     }
 
     if (hexadecimal < min || hexadecimal > max) {
-        return {semanticError: `Hexadecimal value '${hexadecimalString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, end: hexadecimalString.length + offset};
+        return {semanticError: `Hexadecimal value '${hexadecimalString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, start: offset, end: hexadecimalString.length + offset};
     }
 }
 
@@ -48,7 +48,7 @@ function validateBinaryWithinRange(binary, bits, offset) {
     binary = binary.slice(2);
 
     if (binary.length !== bits) {
-        return {semanticError: `Binary value '${binaryString}' should be exactly ${bits} bits at index ${offset + 1}`, end: binaryString.length + offset};
+        return {semanticError: `Binary value '${binaryString}' should be exactly ${bits} bits at index ${offset + 1}`, start: offset, end: binaryString.length + offset};
     }
 
     binary = parseInt(binary, 2);
@@ -59,7 +59,7 @@ function validateBinaryWithinRange(binary, bits, offset) {
 
 
     if (binary >= maxVal) {
-        return {semanticError: `Binary value '${binaryString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, end: binaryString.length + offset};
+        return {semanticError: `Binary value '${binaryString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, start: offset, end: binaryString.length + offset};
     }
 
     if (binary >= negativeThreshold) {
@@ -67,7 +67,7 @@ function validateBinaryWithinRange(binary, bits, offset) {
     }
 
     if (binary < min || binary > max) {
-        return {semanticError: `Binary value '${binaryString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, end: binaryString.length + offset};
+        return {semanticError: `Binary value '${binaryString}' should be a signed value between ${min} and ${max} at index ${offset + 1}`, start: offset, end: binaryString.length + offset};
     }
 }
 
@@ -88,7 +88,7 @@ function validateTrapVector(trapVector, type, offset) {
     }
 
     if (value < 32 || value > 36) {
-        return {semanticError: `Trap Vector '${trapVector}' should be a value between 0x20 and 0x25 at index ${offset + 1}`, end: trapVector.length + offset};   
+        return {semanticError: `Trap Vector '${trapVector}' should be a value between 0x20 and 0x25 at index ${offset + 1}`, start: offset, end: trapVector.length + offset};   
     }
 }
 
@@ -110,7 +110,7 @@ function validateAddress(address, type, offset) {
     }
 
     if (value < 0 || value > maxVal) {
-        return {semanticError: `Address value '${address}' should be a value between 0 and ${maxVal} at index ${offset + 1}`, end: address.length + offset};
+        return {semanticError: `Address value '${address}' should be a value between 0 and ${maxVal} at index ${offset + 1}`, start: offset, end: address.length + offset};
     }
 }
 

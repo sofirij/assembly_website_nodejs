@@ -1,4 +1,3 @@
-const moo = require('moo');
 const {StateField} = require('@codemirror/state');
 const {Decoration, EditorView} = require('@codemirror/view');
 
@@ -13,7 +12,7 @@ const constantHighlight = Decoration.mark({class: 'constantHighlight'});
 
 const lexer = require('./lexer.js');
 
-const highlightField = StateField.define({
+const highlightExtension = StateField.define({
     create() {
         return Decoration.none;
     },
@@ -153,5 +152,5 @@ const highlightField = StateField.define({
 });
 
 module.exports = {
-    highlightField
+    highlightExtension
 };

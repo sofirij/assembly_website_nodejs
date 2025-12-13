@@ -13,15 +13,6 @@ function simulateTab(view) {
     return true;
 }
 
-// Display the binary code in the binary view
-function displayBinaryCode(view, binaryCode) {
-    let cursorPos = view.state.selection.main.head;
-    
-    view.dispatch({
-        changes: {from: cursorPos, insert: binaryCode}
-    });
-}
-
 // Clear the binary view
 function clearBinaryView(view) {
     view.dispatch({
@@ -36,9 +27,9 @@ function viewInsertAtEnd(view, toInsert) {
         changes: {
             from: length,
             to: length,
-            insert: toInsert + '\n'
+            insert: toInsert
         }
     });
 }
 
-module.exports = {simulateTab, displayBinaryCode, clearBinaryView, viewInsertAtEnd};
+module.exports = {simulateTab, clearBinaryView, viewInsertAtEnd};

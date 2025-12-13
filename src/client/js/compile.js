@@ -1,34 +1,24 @@
-const { assemblyView, binaryView, assembleButton } = require('./index.js');
 const nearley = require('nearley');
 const grammar = require('./lc3.js');
 const {validateDecimalWithinRange, convertToBinaryString} = require('./grammarUtils.js');
-const {viewInsertAtEnd} = require('./codeEditor.js');
-
-
 
 // perform linting
 // pass data through and return any errors
-assembleButton.addEventListener('click', () => {
-    console.log('Assemble button clicked');
-
-    // clear the binary view
-    binaryView.dispatch({
-        changes: {from: 0, to: binaryView.state.doc.length, insert: ''}
-    });
-
-    const lines = assemblyView.state.doc.lines;
+function compileAssembly (view) {
+    const lines = view.state.doc.lines;
     let lineStartValue;
     const labelMap = new Map();
     let pc = 0;
     let hasOrigLine = false;
     let hasEndLine = false;
     let binaryCode = '';
+    let assemblerErrors = [];
     
 
     // ignore errors for now
     // perform the first pass to get the labels and their positions
     for (let line = 1; line <= lines; line++) {
-        const text = assemblyView.state.doc.line(line).text;
+        const text = view.state.doc.line(line).text;
         
         // don't try to assemble empty lines
         if (text.trim() === '') {
@@ -50,7 +40,9 @@ assembleButton.addEventListener('click', () => {
                     result.errors.forEach(error => {
                         console.log(error.semanticError + ' on line ' + line);
                     });
-                    return;
+
+                    assemblerErrors.push({line: line, errors: result.errors});
+                    return {fail: assemblerErrors};
                 }
 
                 // check if a label exists and add it to the label map
@@ -92,7 +84,7 @@ assembleButton.addEventListener('click', () => {
     // actual line numbers will be set when we assemble the .orig directive
     // the first pass should have dealt with incomplete lines and syntax errors
     for (let line = 1; line <= lines; line++) {
-        const text = assemblyView.state.doc.line(line).text;
+        const text = view.state.doc.line(line).text;
         const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
         // console.log(text);
 
@@ -298,6 +290,10 @@ assembleButton.addEventListener('click', () => {
         return;
     }
 
-    // display the binary code in the binary view
-    viewInsertAtEnd(binaryView, binaryCode);
-});
+    return {pass: binaryCode};
+}
+
+
+
+
+module.exports = {compileAssembly}
