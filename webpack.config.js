@@ -4,6 +4,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
     entry: [
+        './src/client/js/index.js',
         './src/client/js/lexer.js',
         './src/client/js/grammarUtils.js',
         './src/client/js/linting.js',
