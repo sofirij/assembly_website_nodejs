@@ -3,11 +3,11 @@ const {linter} = require('@codemirror/lint');
 const {compileAssembly} = require('./compile.js');
 
 // define the lint extension for the assembly view
-
 // create the lint source
 function lintSource(view) {
     const result = compileAssembly(view);
 
+    // this occurs in the event that the assembly view is empty
     if (!result) {
         return [];
     }
@@ -21,7 +21,7 @@ function lintSource(view) {
     return [];
 }
 
-function renderErrorMessage(message, type) {
+function renderErrorMessage(message) {
     const dom = document.createElement('div');
     dom.style.color = '#1e1e1e';
     dom.style.display = 'inline-block';
@@ -45,13 +45,13 @@ function createDiagnosticList(view, errors) {
         const lineOffset = view.state.doc.line(line).from;
 
         lineErrors.forEach(error => {
-            const errorMessage = error.semanticError + ' on line ' + line;
+            const errorMessage = `${error.type}: ${error.message} on line ${line}`;
             diagnostics.push({
                 from: lineOffset + error.start,
                 to: lineOffset + error.end,
                 severity: 'error',
                 message: errorMessage,
-                renderMessage: () => renderErrorMessage(errorMessage, 'semanticError')
+                renderMessage: () => renderErrorMessage(errorMessage)
             });
         });
     });
