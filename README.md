@@ -47,8 +47,7 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Containerization (with Docker)
 - Deploying the backend online
 - Option to switch to a simulator to see how the program would be executed (still in dev)
-- Update the compile to produce diagnostics for more errors than the current semantic errors
+- Update the compile to produce diagnostics for syntax errors
 - Fix tab and shift + tab functionality when text is hightlighted
 - Remove active line highlighting and active line gutter highlighting from binary view
 - Update diagnostics theme
-- In lc3.ne update the error object to have type, message, start and end
