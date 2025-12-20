@@ -4,15 +4,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
     entry: [
-        './src/client/js/index.js',
-        './src/client/js/lexer.js',
-        './src/client/js/grammarUtils.js',
-        './src/client/js/linting.js',
-        './src/client/js/highlight.js',
-        './src/client/js/lc3.js',
-        './src/client/js/theme.js',
-        './src/client/js/viewEditor.js',
-        './src/client/js/compile.js',
+        './src/client/js/index.js'
     ],
     output: {
         path: path.resolve(__dirname + '/dist'),
