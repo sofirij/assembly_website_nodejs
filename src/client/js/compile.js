@@ -143,7 +143,7 @@ function compileAssembly (view) {
         if (result.errors.length > 0) {
             console.log('Semantic error in assembly on line ' + line);
             assemblerErrors.push({line: line, errors: result.errors});
-            return {fail: assemblerErrors};
+            continue;
         }
 
 
@@ -246,7 +246,7 @@ function compileAssembly (view) {
                             const end = result.operands.lastOperandEnd;
                             const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                             assemblerErrors.push({line: line, errors: [errorObject]})
-                            return {fail: assemblerErrors};
+                            continue;
                         }
 
                         // validate label is of the right size (16 bits)
@@ -261,15 +261,8 @@ function compileAssembly (view) {
                             const end = result.labelEnd;
                             const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                             assemblerErrors.push({line: line, errors: [errorObject]});
-                            return {fail: assemblerErrors};
+                            continue;
                         }
-
-                        /*
-                        // previous version
-                        if (validateAddress(addressString, decimal, 0)) {
-                            console.log('Address is too big on line ' + line);
-                            return;
-                        }*/
 
                         // convert the address to its binary form
                         const binaryAddress = convertToBinaryString(addressString, 'decimal', 16);
@@ -340,7 +333,7 @@ function compileAssembly (view) {
                         const end = result.operands.lastOperandEnd;
                         const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                         assemblerErrors.push({line: line, errors: [errorObject]});
-                        return {fail: assemblerErrors};
+                        continue;
                     }
 
                     // make sure the offset won't be too large
@@ -368,7 +361,7 @@ function compileAssembly (view) {
                                 const end = result.operands.lastOperandEnd;
                                 const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                                 assemblerErrors.push({line: line, errors: [errorObject]});
-                                return {fail: assemblerErrors};
+                                continue;
                             }
                             binaryOffset = convertToBinaryString(offsetString, 'decimal', 9);
                             console.log(offsetString);
@@ -387,7 +380,7 @@ function compileAssembly (view) {
                                 const end = result.operands.lastOperandEnd;
                                 const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                                 assemblerErrors.push({line: line, errors: [errorObject]});
-                                return {fail: assemblerErrors};
+                                continue;
                             }
                             binaryOffset = convertToBinaryString(offsetString, 'decimal', 11);
                             console.log(offsetString);
@@ -405,6 +398,10 @@ function compileAssembly (view) {
                 break;
             }
         }
+    }
+
+    if (assemblerErrors.length > 0) {
+        return {fail: assemblerErrors};
     }
 
     return {pass: binaryCode};
