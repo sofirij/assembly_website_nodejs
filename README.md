@@ -51,3 +51,4 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Fix tab and shift + tab functionality when text is hightlighted
 - Remove active line highlighting and active line gutter highlighting from binary view
 - Update diagnostics theme
+- Update linting to hightlight more than one error at a time
