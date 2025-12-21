@@ -49,4 +49,5 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Option to switch to a simulator to see how the program would be executed (still in dev)
 - Update the compile to produce diagnostics for syntax errors
 - Fix tab and shift + tab functionality when text is hightlighted
-- Make the line number in the binary view correspond to the assembly code's line number in the assembly view
+- Update binary code result structure to use a red-black tree
+- Edit compile order to only calculate labels first
