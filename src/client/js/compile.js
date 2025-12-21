@@ -58,8 +58,8 @@ function compileAssembly (view) {
                     const label = result.label.slice(-1) === ':' ? result.label.slice(0, -1).toLowerCase() : result.label.toLowerCase();
 
                     if (labelMap.has(label)) {
-                        console.log(`Trying to reuse label ${label} on line ${line}\n`);
-                        const errorMessage = `Trying to reuse label ${label}`;
+                        console.log(`Trying to reuse label '${label}' on line ${line}\n`);
+                        const errorMessage = `Trying to reuse label '${label}'`;
                         const errorType = 'Semantic Error';
                         const start = result.labelStart - 1;
                         const end = result.labelEnd;
@@ -239,8 +239,8 @@ function compileAssembly (view) {
                         let label = result.operands.label.toLowerCase();
                         label = label.slice(-1) === ':' ? label.slice(0, -1) : label;
                         if (!labelMap.has(label)) {
-                            console.log('Label ' + label + ' does not exist on line ' + line);
-                            const errorMessage = `Label ${label} does not exist`;
+                            console.log(`Label '${label}' does not exist on line ${line}`);
+                            const errorMessage = `Label '${label}' does not exist`;
                             const errorType = 'Semantic Error';
                             const start = result.operands.lastOperandStart - 1;
                             const end = result.operands.lastOperandEnd;
@@ -326,8 +326,8 @@ function compileAssembly (view) {
                     label = label.slice(-1) === ':' ? label.slice(0, -1) : label;
                     console.log('Label is ' + label);
                     if (!labelMap.has(label)) {
-                        console.log('Label ' + label + ' does not exist on line ' + line);
-                        const errorMessage = `Label ${label} does not exist`;
+                        console.log(`Label '${label}' does not exist on line ${line}`);
+                        const errorMessage = `Label '${label}' does not exist`;
                         const errorType = 'Semantic Error';
                         const start = result.operands.lastOperandStart - 1;
                         const end = result.operands.lastOperandEnd;
@@ -355,7 +355,7 @@ function compileAssembly (view) {
                             const offsetString = '#' + offset.toString();
                             if (validateDecimalWithinRange(offsetString, 9, 0)) {
                                 console.log('Cannot encode label as a 9 bit unsigned number on line ' + line);
-                                const errorMessage = `Cannot encode label ${label} as a 9 bit unsigned integer`;
+                                const errorMessage = `Cannot encode label '${label}' as a 9 bit unsigned integer`;
                                 const errorType = 'Semantic Error';
                                 const start = result.operands.lastOperandStart - 1;
                                 const end = result.operands.lastOperandEnd;
@@ -374,7 +374,7 @@ function compileAssembly (view) {
                             const offsetString = '#' + offset.toString();
                             if (validateDecimalWithinRange(offsetString, 11, 0)) {
                                 console.log('Cannot encode label as an 11 bit unsigned number on line ' + line);
-                                const errorMessage = `Cannot encode label ${label} as an 11 bit unsigned integer`;
+                                const errorMessage = `Cannot encode label '${label}' as an 11 bit unsigned integer`;
                                 const errorType = 'Semantic Error';
                                 const start = result.operands.lastOperandStart - 1;
                                 const end = result.operands.lastOperandEnd;
