@@ -11,9 +11,10 @@ function compileAssembly (view) {
     let pc = 0;
     let hasOrigLine = false;
     let hasEndLine = false;
-    let binaryCode = '';
     let assemblerErrors = [];
     let lastLineProcessed;
+    const binaryCodeObject = {};
+    let binaryLineNumber = 1;
 
 
     
@@ -66,7 +67,7 @@ function compileAssembly (view) {
                         const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
 
                         assemblerErrors.push({line: line, errors: [errorObject]});
-                        return {fail: assemblerErrors};
+                        return {outcome: 'fail', result: assemblerErrors};
                     }
 
                     if (result.type === 'directiveExpressionLine' || result.type === 'operandExpressionLine') {
@@ -102,7 +103,7 @@ function compileAssembly (view) {
         const end = string.length;
         const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
         assemblerErrors.push({line: lastLineProcessed, errors: [errorObject]});
-        return {fail: assemblerErrors};
+        return {outcome: 'fail', result: assemblerErrors};
     }
 
     // show the label map
@@ -116,6 +117,7 @@ function compileAssembly (view) {
     // actual line numbers will be set when we assemble the .orig directive
     // the first pass should have dealt with incomplete lines and syntax errors
     for (let line = 1; line <= lines; line++) {
+        let binaryCode = '';
         const text = view.state.doc.line(line).text;
         const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
         // console.log(text);
@@ -123,9 +125,6 @@ function compileAssembly (view) {
 
         // do nothing on empty lines before the .orig directive
         if (text.trim() === '') {
-            if (hasOrigLine) {
-                binaryCode += '\n\n';
-            }
             continue;
         }
 
@@ -161,12 +160,14 @@ function compileAssembly (view) {
 
                     const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                     assemblerErrors.push({line: line, errors: [errorObject]});
-                    return {fail: assemblerErrors};
+                    return {outcome: 'fail', result: assemblerErrors};
                 }
 
                 
                 let toInsert = result.label + '\n\n';
                 binaryCode += toInsert;
+                binaryCodeObject[binaryLineNumber] = {assemblyLineNumber: line, binaryCode: binaryCode};
+                binaryLineNumber += countOccurences(binaryCode, '\n');
                 break;
             }
             case 'commentLine': {
@@ -178,6 +179,8 @@ function compileAssembly (view) {
 
                 // insert into the binaryView
                 binaryCode += toInsert;
+                binaryCodeObject[binaryLineNumber] = {assemblyLineNumber: line, binaryCode: binaryCode};
+                binaryLineNumber += countOccurences(binaryCode, '\n');
                 continue;
             }
             case 'directiveExpressionLine': {
@@ -221,7 +224,7 @@ function compileAssembly (view) {
                         const end = result.directiveEnd;
                         const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                         assemblerErrors.push({line: line, errors: [errorObject]});
-                        return {fail: assemblerErrors}
+                        return {outcome: 'fail', result: assemblerErrors};
                     }
                 } else if (hasOrigLine) {
                     // process directive expression
@@ -276,6 +279,8 @@ function compileAssembly (view) {
                     
                     
                     binaryCode += toInsert;
+                    binaryCodeObject[binaryLineNumber] = {assemblyLineNumber: line, binaryCode: binaryCode};
+                    binaryLineNumber += countOccurences(binaryCode, '\n');
                     break;
                 } else {
                     console.log('Assembly must start with a .orig expression on line ' + line);
@@ -289,7 +294,7 @@ function compileAssembly (view) {
 
                     const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                     assemblerErrors.push({line: line, errors: [errorObject]});
-                    return {fail: assemblerErrors};
+                    return {outcome: 'fail', result: assemblerErrors};
                 }
             }
             case 'operandExpressionLine': {
@@ -304,7 +309,7 @@ function compileAssembly (view) {
 
                     const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                     assemblerErrors.push({line: line, errors: [errorObject]});
-                    return {fail: assemblerErrors};
+                    return {outcome: 'fail', result: assemblerErrors};
                 }
                 pc++;
                 let toInsert = '';
@@ -394,17 +399,23 @@ function compileAssembly (view) {
                 }
 
                 // show the binary conversion to the binary view
-                binaryCode += toInsert + '\n';
+                binaryCode += toInsert + '\n\n';
+                binaryCodeObject[binaryLineNumber] = {assemblyLineNumber: line, binaryCode: binaryCode};
+                binaryLineNumber += countOccurences(binaryCode, '\n');
                 break;
             }
         }
     }
 
     if (assemblerErrors.length > 0) {
-        return {fail: assemblerErrors};
+        return {outcome: 'fail', result: assemblerErrors};
     }
 
-    return {pass: binaryCode};
+    return {outcome: 'pass', result: binaryCodeObject};
+}
+
+function countOccurences(string, toCount) {
+    return string.split(toCount).length - 1;
 }
 
 

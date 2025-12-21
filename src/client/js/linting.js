@@ -5,20 +5,15 @@ const {compileAssembly} = require('./compile.js');
 // define the lint extension for the assembly view
 // create the lint source
 function lintSource(view) {
-    const result = compileAssembly(view);
+    const binaryCode = compileAssembly(view);
 
     // this occurs in the event that the assembly view is empty
-    if (!result) {
+    if (!binaryCode || binaryCode.outcome === 'pass') {
         return [];
     }
 
-    if (result.fail) {
-        const errors = result.fail;
-        return createDiagnosticList(view, errors);
-    }
-
-    // if compiling doesn't fail that means there are no diagnostics to display
-    return [];
+    const errors = binaryCode.result;
+    return createDiagnosticList(view, errors);
 }
 
 function renderErrorMessage(message) {

@@ -32,4 +32,25 @@ function viewInsertAtEnd(view, toInsert) {
     });
 }
 
-module.exports = {simulateTab, clearBinaryView, viewInsertAtEnd};
+function trimView(view) {
+    const text = view.state.doc.toString();
+    
+    const start = text.search(/\S/);
+    const end = text.search(/\s*$/);
+
+    if (start === -1) {
+        // document is all whitespace
+        view.dispatch({
+            changes: { from: 0, to: view.state.doc.length, insert: ''}
+        });
+    } else {
+        view.dispatch({
+            changes: [
+                {from: 0, to: start},
+                {from: end, to: view.state.doc.length}
+            ]
+        });
+    }
+}
+
+module.exports = {simulateTab, clearBinaryView, viewInsertAtEnd, trimView};

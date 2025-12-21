@@ -1,4 +1,4 @@
-const {EditorView, lineNumbers} = require('@codemirror/view');
+const {EditorView} = require('@codemirror/view');
 
 // define theme for the assembly view
 const assemblyViewTheme = EditorView.baseTheme({
@@ -47,6 +47,4 @@ const binaryViewTheme = EditorView.baseTheme({
     },
 });
 
-const lineNumberGutter = lineNumbers({});
-
-module.exports = {assemblyViewTheme, lineNumberGutter, binaryViewTheme};
+module.exports = {assemblyViewTheme, binaryViewTheme};

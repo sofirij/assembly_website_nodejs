@@ -2,14 +2,15 @@ require('../css/styles.css'); // added so bundling could include css
 
 const {basicSetup, minimalSetup} = require('codemirror');
 const {EditorState} = require('@codemirror/state');
-const {EditorView, keymap} = require('@codemirror/view');
-const {simulateTab, viewInsertAtEnd} = require('./viewEditor.js');
+const {EditorView, keymap, lineNumbers} = require('@codemirror/view');
+const {simulateTab, viewInsertAtEnd, trimView} = require('./viewEditor.js');
 const {highlightExtension} = require('./highlight.js');
 const {linterExtension, lintPanelTheme} = require('./linting.js');
-const {assemblyViewTheme, binaryViewTheme, lineNumberGutter} = require('./theme.js');
+const {assemblyViewTheme, binaryViewTheme} = require('./theme.js');
 const {compileAssembly} = require('./compile.js');
 
-
+let binaryCodeObject = null;
+let binaryLineNumbers = null;
 
 // State for binary code container
 const binaryState = EditorState.create({
@@ -18,7 +19,9 @@ const binaryState = EditorState.create({
         binaryViewTheme,
         EditorView.lineWrapping, 
         EditorView.editable.of(false),
-        lineNumberGutter,
+        lineNumbers({
+            formatNumber: formatNumber
+        }),
     ]   
 });
 
@@ -38,7 +41,6 @@ const assemblyState = EditorState.create({
         assemblyViewTheme,
         linterExtension,
         lintPanelTheme,
-        lineNumberGutter
     ]
 });
 
@@ -53,6 +55,9 @@ const assembleButton = document.getElementById('assemble-button');
 assembleButton.addEventListener('click', () => {
     console.log('Assemble button clicked');
 
+    binaryCodeObject = null;
+    binaryLineNumbers = null;
+
     // clear the binary view
     binaryView.dispatch({
         changes: {from: 0, to: binaryView.state.doc.length, insert: ''}
@@ -60,8 +65,37 @@ assembleButton.addEventListener('click', () => {
 
     const binaryCode = compileAssembly(assemblyView);
 
-    if (binaryCode.pass) {
-        const result = binaryCode.pass.trim();
-        viewInsertAtEnd(binaryView, result);
+    if (binaryCode.outcome === 'pass') {
+        binaryCodeObject = binaryCode.result;
+        const keys = getSortedListOfKeys(binaryCodeObject);
+
+        binaryLineNumbers = new Set(keys);
+
+        for (let key of keys) {
+            viewInsertAtEnd(binaryView, binaryCodeObject[key].binaryCode);
+        }
     }
+
+    trimView(binaryView);
 });
+
+
+function formatNumber (lineNo) {
+    if (binaryCodeObject === null) {
+        return lineNo.toString();
+    }
+
+    let floor = lineNo;
+    
+    while (!binaryLineNumbers.has(floor)) {
+        floor--;
+    }
+
+    const assemblyLineNumber = binaryCodeObject[floor].assemblyLineNumber;
+
+    return assemblyLineNumber.toString();
+}
+
+function getSortedListOfKeys (object) {
+    return Object.keys(object).map(Number).sort((a, b) => a - b);
+}
