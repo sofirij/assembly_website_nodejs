@@ -1,4 +1,4 @@
-// const { setDiagnostics } = require('@codemirror/lint');
+const {EditorView} = require('@codemirror/view');
 const {linter} = require('@codemirror/lint');
 const {compileAssembly} = require('./compile.js');
 
@@ -23,13 +23,14 @@ function lintSource(view) {
 
 function renderErrorMessage(message) {
     const dom = document.createElement('div');
-    dom.style.color = '#1e1e1e';
+    dom.style.backgroundColor = '#1e1e1e';
     dom.style.display = 'inline-block';
 
 
     const p = document.createElement('p');
     p.textContent = message;
-    p.style.color = '#1e1e1e';
+    p.style.color = '#FFD700';
+    p.style.fontSize = '15px';
 
     dom.appendChild(p);
     return dom;
@@ -61,6 +62,29 @@ function createDiagnosticList(view, errors) {
     return diagnostics;
 }
 
+// define the theme for the lint panel
+const lintPanelTheme = EditorView.theme({
+    '.cm-panel.cm-panel-lint ul [aria-selected]': {
+        'padding-left': '3px',
+        'backgroundColor': '#1e1e1e'
+    },
+    '.cm-diagnostic.cm-diagnostic-error': {
+        'backgroundColor': '#1e1e1e',
+        'border-left': 'none',
+        'padding': 'none'
+    },
+    '.cm-panel.cm-panel-lint [name=close]': {
+        'position': 'absolute',
+        'right': '17px',
+        'background': 'inherit',
+        'border': 'none',
+        'font': 'inherit',
+        'padding': '0',
+        'margin': '0',
+        'color': 'white'
+    }
+});
+
 // configuration for the lint extension
 const lintConfig = {
     autoPanel: true
@@ -69,14 +93,6 @@ const lintConfig = {
 // create the linter extension
 const linterExtension = linter(lintSource, lintConfig);
 
-/*
-function displayErrors(view, errors) {
-    console.log('Tried to display errors');
-    const diagnosticList = createDiagnosticList(view, errors);
-    const lintingEffect = setDiagnostics(view.state, diagnosticList);
-    view.dispatch(lintingEffect);
-    
-    console.log('Linting done');
-}*/
 
-module.exports = {linterExtension};
+
+module.exports = {linterExtension, lintPanelTheme};

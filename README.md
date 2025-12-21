@@ -50,4 +50,3 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Update the compile to produce diagnostics for syntax errors
 - Fix tab and shift + tab functionality when text is hightlighted
 - Remove active line highlighting and active line gutter highlighting from binary view
-- Update diagnostics theme

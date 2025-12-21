@@ -5,7 +5,7 @@ const {EditorState} = require('@codemirror/state');
 const {EditorView, keymap} = require('@codemirror/view');
 const {simulateTab, viewInsertAtEnd} = require('./viewEditor.js');
 const {highlightExtension} = require('./highlight.js');
-const {linterExtension} = require('./linting.js');
+const {linterExtension, lintPanelTheme} = require('./linting.js');
 const {assemblyViewTheme} = require('./theme.js');
 const {compileAssembly} = require('./compile.js');
 
@@ -34,7 +34,8 @@ const assemblyState = EditorState.create({
         keymap.of({key: 'Tab', run: simulateTab}),
         highlightExtension,
         assemblyViewTheme,
-        linterExtension
+        linterExtension,
+        lintPanelTheme
     ]
 });
 
