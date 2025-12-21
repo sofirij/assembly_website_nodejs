@@ -1,12 +1,12 @@
 require('../css/styles.css'); // added so bundling could include css
 
-const {basicSetup} = require('codemirror');
+const {basicSetup, minimalSetup} = require('codemirror');
 const {EditorState} = require('@codemirror/state');
 const {EditorView, keymap} = require('@codemirror/view');
 const {simulateTab, viewInsertAtEnd} = require('./viewEditor.js');
 const {highlightExtension} = require('./highlight.js');
 const {linterExtension, lintPanelTheme} = require('./linting.js');
-const {assemblyViewTheme} = require('./theme.js');
+const {assemblyViewTheme, binaryViewTheme, lineNumberGutter} = require('./theme.js');
 const {compileAssembly} = require('./compile.js');
 
 
@@ -14,9 +14,11 @@ const {compileAssembly} = require('./compile.js');
 // State for binary code container
 const binaryState = EditorState.create({
     extensions: [
-        basicSetup, 
+        minimalSetup, 
+        binaryViewTheme,
         EditorView.lineWrapping, 
         EditorView.editable.of(false),
+        lineNumberGutter,
     ]   
 });
 
@@ -35,7 +37,8 @@ const assemblyState = EditorState.create({
         highlightExtension,
         assemblyViewTheme,
         linterExtension,
-        lintPanelTheme
+        lintPanelTheme,
+        lineNumberGutter
     ]
 });
 

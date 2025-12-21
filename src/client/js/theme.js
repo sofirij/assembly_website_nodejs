@@ -1,6 +1,6 @@
-const {EditorView} = require('@codemirror/view');
+const {EditorView, lineNumbers} = require('@codemirror/view');
 
-// define colors for the assembly view
+// define theme for the assembly view
 const assemblyViewTheme = EditorView.baseTheme({
     "&.cm-focused .cm-content": {
         "caret-color": "#FFD700 !important"
@@ -19,7 +19,34 @@ const assemblyViewTheme = EditorView.baseTheme({
     },
     ".cm-gutters": {
         "background-color": "#1e1e1e !important"
+    },
+    '.cm-lineNumbers .cm-gutterElement': {
+        'text-align': 'right',
+    },
+    '.cm-gutter.cm-foldGutter': {
+        'width': '0px'
     }
 });
 
-module.exports = {assemblyViewTheme};
+// define theme for the binary view
+const binaryViewTheme = EditorView.baseTheme({
+    '.cm-selectionBackground': {
+        'backgroundColor': '#284B63 !important'
+    },
+    '.cm-lineNumbers .cm-gutterElement': {
+        'text-align': 'right',
+    },
+    'cm-gutters': {
+        'background-color': '#1e1e1e !important'
+    },
+    "&": {
+        "outline": "none !important",
+        "width": "100%",
+        "background-color": "#1e1e1e",
+        "color": "#D4D4D4"
+    },
+});
+
+const lineNumberGutter = lineNumbers({});
+
+module.exports = {assemblyViewTheme, lineNumberGutter, binaryViewTheme};

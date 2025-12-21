@@ -49,4 +49,4 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Option to switch to a simulator to see how the program would be executed (still in dev)
 - Update the compile to produce diagnostics for syntax errors
 - Fix tab and shift + tab functionality when text is hightlighted
-- Remove active line highlighting and active line gutter highlighting from binary view
+- Make the line number in the binary view correspond to the assembly code's line number in the assembly view
