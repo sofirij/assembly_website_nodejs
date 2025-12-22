@@ -51,4 +51,3 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Update binary code result structure to use a red-black tree
 - Fix issue where using multiple selectors to change the document removes highlights from the lines in between
 - Don't number empty lines
-- Compile empty assembly view without errors

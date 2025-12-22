@@ -12,17 +12,10 @@ function compileAssembly (view) {
     let hasOrigLine = false;
     let hasEndLine = false;
     let assemblerErrors = [];
-    let lastLineProcessed;
+    let lastLineProcessed = 1;
     const binaryCodeObject = {};
     let binaryLineNumber = 1;
 
-
-    
-    // do nothing if view is empty
-    const string = view.state.doc.toString();
-    if (string.trim() === '') {
-        return;
-    }
     
 
     // ignore errors for now
