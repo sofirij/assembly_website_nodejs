@@ -50,4 +50,3 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Update the compile to produce diagnostics for syntax errors
 - Fix tab and shift + tab functionality when text is hightlighted
 - Update binary code result structure to use a red-black tree
-- Edit compile order to only calculate labels first
