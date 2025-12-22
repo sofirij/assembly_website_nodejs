@@ -93,8 +93,8 @@ function formatNumber (lineNo) {
 
     let floor = lineNo;
     
-    while (!binaryLineNumbers.has(floor)) {
-        floor--;
+    if (!binaryLineNumbers.has(floor)) {
+        return ""
     }
 
     const assemblyLineNumber = binaryCodeObject[floor].assemblyLineNumber;

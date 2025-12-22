@@ -264,7 +264,11 @@ function compileAssembly (view) {
                         const binaryAddress = convertToBinaryString(addressString, 'decimal', 16);
                         
                         toInsert += result.binary.replace('0', binaryAddress);
-                    } else {
+                    } else if (result.directive === '.end') {
+                        // .end directive does not produce any binary output
+                        continue;
+                    }
+                    else {
                         toInsert += result.binary;
                     }
 
