@@ -3,11 +3,12 @@ require('../css/styles.css'); // added so bundling could include css
 const {basicSetup, minimalSetup} = require('codemirror');
 const {EditorState} = require('@codemirror/state');
 const {EditorView, keymap, lineNumbers} = require('@codemirror/view');
-const {simulateTab, viewInsertAtEnd, trimView} = require('./viewEditor.js');
+const {viewInsertAtEnd, trimView} = require('./viewEditor.js');
 const {highlightExtension} = require('./highlight.js');
 const {linterExtension, lintPanelTheme} = require('./linting.js');
 const {assemblyViewTheme, binaryViewTheme} = require('./theme.js');
 const {compileAssembly} = require('./compile.js');
+const {indentMore, indentLess, defaultKeymap} = require('@codemirror/commands');
 
 let binaryCodeObject = null;
 let binaryLineNumbers = null;
@@ -36,11 +37,16 @@ const assemblyState = EditorState.create({
     extensions: [
         basicSetup,
         EditorView.lineWrapping,
-        keymap.of({key: 'Tab', run: simulateTab}),
+        keymap.of([
+            {key: 'Tab', run: indentMore},
+            {key: 'Shift-Tab', run: indentLess}
+        ]),
         highlightExtension,
         assemblyViewTheme,
         linterExtension,
         lintPanelTheme,
+        EditorState.tabSize.of(4),
+        keymap.of(defaultKeymap)
     ]
 });
 
