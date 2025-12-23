@@ -82,7 +82,8 @@ const lintPanelTheme = EditorView.theme({
 
 // configuration for the lint extension
 const lintConfig = {
-    autoPanel: true
+    autoPanel: true,
+    delay: 500
 }
 
 // create the linter extension

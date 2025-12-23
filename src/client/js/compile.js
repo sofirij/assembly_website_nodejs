@@ -1,6 +1,8 @@
 const nearley = require('nearley');
 const grammar = require('./lc3.js');
 const {validateDecimalWithinRange, convertToBinaryString, validateAddress} = require('./grammarUtils.js');
+const lexer = require('./lexer.js');
+const { error } = require('moo');
 
 // perform linting
 // pass data through and return any errors
@@ -33,7 +35,7 @@ function compileAssembly (view) {
         try {
             parser.feed(text);
             // make sure that the parser processed the text
-            if (parser.results) {
+            if (parser.results.length === 1) {
                 
                 const result = parser.results[0];
                 
@@ -74,13 +76,133 @@ function compileAssembly (view) {
                     lastLineProcessed = line;
                 }
             } else {
-                console.log('Incomplete line at line ' + line);
-                return;
+                lexer.reset(text);
+
+                let firstFunctionalToken = null;
+                let secondFunctionalToken = null;
+
+                let token;
+                while (token = lexer.next()) {
+                    if (firstFunctionalToken === null && token.type !== 'ws') {
+                        firstFunctionalToken = token;
+                        continue;
+                    }
+
+                    if (token.type !== 'ws') {
+                        secondFunctionalToken = token;
+                        break;
+                    }
+                }
+
+                const errorType = 'Syntax Error';
+                let errorMessage;
+                let start;
+                let end;
+
+                switch (firstFunctionalToken.type) {
+                    case 'error': {
+                        errorMessage = `'${firstFunctionalToken.text}' is not a valid operation`;
+                        start = firstFunctionalToken.offset;
+                        end = start + firstFunctionalToken.text.length;
+                        break;
+                    }
+                    case 'label': {
+                        switch (secondFunctionalToken) {
+                            case 'error': {
+                                errorMessage = `'${secondFunctionalToken.text}' is not a valid operation`;
+                                start = secondFunctionalToken.offset;
+                                end = start + secondFunctionalToken.text.length;
+                                break;
+                            }
+                            case 'label': {
+                                errorMessage = `'${secondFunctionalToken.text}' is not a valid operation`;
+                                start = secondFunctionalToken.offset;
+                                end = start + secondFunctionalToken.text.length;
+                                break;
+                            }
+                            default: {
+                                errorMessage = `Invalid use of '${secondFunctionalToken.value}' instruction`;
+                                start = secondFunctionalToken.offset;
+                                end = start + secondFunctionalToken.text.length;
+                            }
+                        }
+                        break;
+                    }
+                    default: {
+                        errorMessage = `Invalid use of '${firstFunctionalToken.value}' instruction`;
+                        start = firstFunctionalToken.offset;
+                        end = start + firstFunctionalToken.text.length;
+                    }
+                }
+
+                const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
+                assemblerErrors.push({line: line, errors: [errorObject]});
+                return {outcome: 'fail', result: assemblerErrors};
             }
         } catch (e) {
+            // create diagnostics for syntax errors
+            lexer.reset(text);
 
-            console.log('Incorrect syntax at line ' + line);
-            return;
+            let firstFunctionalToken = null;
+            let secondFunctionalToken = null;
+
+            let token;
+            while (token = lexer.next()) {
+                if (firstFunctionalToken === null && token.type !== 'ws') {
+                    firstFunctionalToken = token;
+                    continue;
+                }
+
+                if (token.type !== 'ws') {
+                    secondFunctionalToken = token;
+                    break;
+                }
+            }
+
+            const errorType = 'Syntax Error';
+            let errorMessage;
+            let start;
+            let end;
+
+            switch (firstFunctionalToken.type) {
+                case 'error': {
+                    errorMessage = `'${firstFunctionalToken.text}' is not a valid operation`;
+                    start = firstFunctionalToken.offset;
+                    end = start + firstFunctionalToken.text.length;
+                    break;
+                }
+                case 'label': {
+                    switch (secondFunctionalToken) {
+                        case 'error': {
+                            errorMessage = `'${secondFunctionalToken.text}' is not a valid operation`;
+                            start = secondFunctionalToken.offset;
+                            end = start + secondFunctionalToken.text.length;
+                            break;
+                        }
+                        case 'label': {
+                            errorMessage = `'${secondFunctionalToken.text}' is not a valid operation`;
+                            start = secondFunctionalToken.offset;
+                            end = start + secondFunctionalToken.text.length;
+                            break;
+                        }
+                        default: {
+                            errorMessage = `Invalid use of '${secondFunctionalToken.value}' instruction`;
+                            start = secondFunctionalToken.offset;
+                            end = start + secondFunctionalToken.text.length;
+                        }
+                    }
+                    break;
+                }
+                default: {
+                    errorMessage = `Invalid use of '${firstFunctionalToken.value}' instruction`;
+                    start = firstFunctionalToken.offset;
+                    end = start + firstFunctionalToken.text.length;
+                }
+            }
+
+            const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
+            assemblerErrors.push({line: line, errors: [errorObject]});
+            return {outcome: 'fail', result: assemblerErrors};
         }
     }
 

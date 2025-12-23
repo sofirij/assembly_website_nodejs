@@ -54,13 +54,6 @@ const highlightExtension = StateField.define({
 
                     let token;
                     while ((token = lexer.next())) {
-                        if (token.type === 'error') {
-                            // console.log(`Lexer error on line ${pos}, column${token.col}\n`);
-                            // console.log(`Unmatched text: '${token.text}'\n`);
-                            newDecos.push(errorHighlight.range(lineStart+token.col-1, lineStart+token.offset+token.text.length));
-                            continue;
-                        }
-
                         switch(token.type) {
                             case 'addAndOpcode':
                             case 'brOpcode':
