@@ -4,7 +4,7 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 
 ## Features
 
-- **Assembly Editor:** Write LC3 assembly code with syntax highlighting and tab support using CodeMirror.
+- **Assembly Editor:** Write LC3 assembly code with linting using CodeMirror.
 - **Binary Viewer:** View the assembled binary code in a read-only editor.
 - **One-Click Assemble:** Convert assembly code to binary with a single button click.
 - **Client Assembler Integration:** No need to worry about delays when assembling is performed on the client side.
@@ -49,3 +49,4 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Option to switch to a simulator to see how the program would be executed (still in dev)
 - Update the compile to produce diagnostics for syntax errors
 - Update binary code result structure to use a red-black tree
+- Add a keybind to allow keyboard only users unfocus from the assembly view
