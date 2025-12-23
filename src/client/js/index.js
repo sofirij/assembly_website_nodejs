@@ -88,13 +88,13 @@ assembleButton.addEventListener('click', () => {
 
 function formatNumber (lineNo) {
     if (binaryCodeObject === null) {
-        return lineNo.toString();
+        return "";
     }
 
     let floor = lineNo;
     
     if (!binaryLineNumbers.has(floor)) {
-        return ""
+        return "";
     }
 
     const assemblyLineNumber = binaryCodeObject[floor].assemblyLineNumber;
