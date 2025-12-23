@@ -24,25 +24,35 @@ const highlightExtension = StateField.define({
         // tokenize each line with the lexer and highlight each token
         if (tr.docChanged) {
             const uniqueAffectedLines = new Set();
+            let filterFrom = Infinity;
+            let filterTo = -Infinity;
 
             // only work on the new lines
-            tr.changes.iterChanges((from, to, fromA, toA, inserted) => {
-                const startLineNew = tr.state.doc.lineAt(fromA).number;
-                const endLineNew = tr.state.doc.lineAt(toA).number;
-                // console.log(`Line ${startLineNew} to ${endLineNew}\n`);
-                uniqueAffectedLines.add(startLineNew);
-                uniqueAffectedLines.add(endLineNew);
+            tr.changes.iterChanges((oldFrom, oldTo, newFrom, newTo) => {
+                console.log(newFrom + ' - ' + newTo);
+                const startLineNew = tr.state.doc.lineAt(newFrom).number;
+                const endLineNew = tr.state.doc.lineAt(newTo).number;
 
-                for (let pos = startLineNew; pos <= endLineNew; pos++) {
-                    const line = tr.state.doc.line(pos);
+                if (newFrom < filterFrom) {
+                    filterFrom = newFrom;
+                }
+
+                if (newTo > filterTo) {
+                    filterTo = newTo;
+                }
+
+                for (let lineNo = startLineNew; lineNo <= endLineNew; lineNo++) {
+                    const line = tr.state.doc.line(lineNo);
                     const lineText = line.text.toLowerCase();
                     const lineStart = line.from;
                     let canBeLabel = true;
+                    uniqueAffectedLines.add(lineNo);
 
                     // console.log(lineText);
                     
                     lexer.reset(lineText);
 
+                    let token;
                     while ((token = lexer.next())) {
                         if (token.type === 'error') {
                             // console.log(`Lexer error on line ${pos}, column${token.col}\n`);
@@ -128,21 +138,24 @@ const highlightExtension = StateField.define({
                 }
             });
 
-            // line decorations that are to be updated should replace previous line decorations
-            // at the same time try not to touch unchanged lines
-            let filterFrom = Infinity;
-            let filterTo = -Infinity;
 
-            for (const pos of uniqueAffectedLines) {
-                const line = tr.state.doc.line(pos);
-                filterFrom = Math.min(filterFrom, line.from);
-                filterTo = Math.max(filterTo, line.to);
-            }
+            filterFrom = tr.state.doc.lineAt(filterFrom).from;
+            filterTo = tr.state.doc.lineAt(filterTo).to;
+
+            console.log(`filterFrom: ${filterFrom} - filterTo: ${filterTo}`);
             
             return deco.update({
-                filter: (from, to) => to <= filterFrom || from >= filterTo,
+                filter: (from, to, value) => {
+                    console.log(`From: ${from} - To: ${to} - Value: ${value ? tr.state.doc.toString().slice(from, to) : "deleted"}`);
+
+                    if ( uniqueAffectedLines.has(tr.state.doc.lineAt(from).number) || uniqueAffectedLines.has(tr.state.doc.lineAt(to).number) ) {
+                        console.log("Should get removed");
+                    }
+                    return ( !(uniqueAffectedLines.has(tr.state.doc.lineAt(from).number) || uniqueAffectedLines.has(tr.state.doc.lineAt(to).number)) )
+                },
                 add: newDecos,
-                sort: true
+                filterFrom: filterFrom,
+                filterTo: filterTo
             });
         }
 

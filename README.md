@@ -49,4 +49,3 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 - Option to switch to a simulator to see how the program would be executed (still in dev)
 - Update the compile to produce diagnostics for syntax errors
 - Update binary code result structure to use a red-black tree
-- Fix issue where using multiple selectors to change the document removes highlights from the lines in between
