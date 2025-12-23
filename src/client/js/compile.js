@@ -52,7 +52,7 @@ function compileAssembly (view) {
                     const label = result.label.slice(-1) === ':' ? result.label.slice(0, -1).toLowerCase() : result.label.toLowerCase();
 
                     if (labelMap.has(label)) {
-                        console.log(`Trying to reuse label '${label}' on line ${line}\n`);
+                        // console.log(`Trying to reuse label '${label}' on line ${line}\n`);
                         const errorMessage = `Trying to reuse label '${label}'`;
                         const errorType = 'Semantic Error';
                         const start = result.labelStart - 1;
@@ -85,13 +85,13 @@ function compileAssembly (view) {
     }
 
     if (!hasEndLine) {
-        console.log('Missing the end directive');
+        // console.log('Missing the end directive');
         const errorMessage = 'Assembly should end with a .end directive';
         const errorType = 'Semantic Error';
 
-        console.log('Getting the string');
+        // console.log('Getting the string');
         const string = view.state.doc.line(lastLineProcessed).text;
-        console.log(string);
+        // console.log(string);
         const start = 0;
         const end = string.length;
         const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
@@ -101,7 +101,7 @@ function compileAssembly (view) {
 
     // show the label map
     labelMap.forEach((value, key, map) => {
-        console.log(key + ' - ' + value);
+        // console.log(key + ' - ' + value);
     });
 
     pc = 0;
@@ -114,7 +114,7 @@ function compileAssembly (view) {
         const text = view.state.doc.line(line).text;
         const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
         // console.log(text);
-        console.log('processing text');
+        // console.log('processing text');
 
         // do nothing on empty lines before the .orig directive
         if (text.trim() === '') {
@@ -133,7 +133,7 @@ function compileAssembly (view) {
         // check for errors before doing anything
         // return diagnostics for semantic errors
         if (result.errors.length > 0) {
-            console.log('Semantic error in assembly on line ' + line);
+            // console.log('Semantic error in assembly on line ' + line);
             assemblerErrors.push({line: line, errors: result.errors});
             continue;
         }
@@ -143,7 +143,7 @@ function compileAssembly (view) {
             case 'labelLine': {
 
                 if (!hasOrigLine) {
-                    console.log('Assembly must start with a .orig expression on line ' + line);
+                    // console.log('Assembly must start with a .orig expression on line ' + line);
                     const errorMessage = 'Asssembly must start with a .orig expression';
                     const errorType = 'Semantic Error';
 
@@ -196,7 +196,7 @@ function compileAssembly (view) {
                             case 'hexadecimal':
                                 lineStartValue = parseInt(lineStartValue.slice(2), 16);
                         }
-                        console.log('.orig value is ' + lineStartValue);
+                        // console.log('.orig value is ' + lineStartValue);
 
                         // update the label map to show the address of each instruction following the initialization of the start address
                         labelMap.forEach((value, key, map) => {
@@ -205,12 +205,12 @@ function compileAssembly (view) {
 
                         // show the label map
                         labelMap.forEach((value, key, map) => {
-                            console.log(key + ' - ' + value);
+                            // console.log(key + ' - ' + value);
                         });
                         hasOrigLine = true;
                         break;
                     } else {
-                        console.log('There can only be one .orig expression on line ' + line);
+                        // console.log('There can only be one .orig expression on line ' + line);
                         const errorMessage = `There can only be one .orig expression`;
                         const errorType = 'Semantic Error';
                         const start = result.directiveStart - 1;
@@ -221,7 +221,7 @@ function compileAssembly (view) {
                     }
                 } else if (hasOrigLine) {
                     // process directive expression
-                    console.log('processing the operand directive\n');
+                    // console.log('processing the operand directive\n');
                     pc++;
                     let toInsert = '';
                     if (result.label) {
@@ -235,7 +235,7 @@ function compileAssembly (view) {
                         let label = result.operands.label.toLowerCase();
                         label = label.slice(-1) === ':' ? label.slice(0, -1) : label;
                         if (!labelMap.has(label)) {
-                            console.log(`Label '${label}' does not exist on line ${line}`);
+                            // console.log(`Label '${label}' does not exist on line ${line}`);
                             const errorMessage = `Label '${label}' does not exist`;
                             const errorType = 'Semantic Error';
                             const start = result.operands.lastOperandStart - 1;
@@ -280,14 +280,14 @@ function compileAssembly (view) {
                     binaryLineNumber += countOccurences(binaryCode, '\n');
                     break;
                 } else {
-                    console.log('Assembly must start with a .orig expression on line ' + line);
+                    // console.log('Assembly must start with a .orig expression on line ' + line);
                     const errorMessage = 'Asssembly must start with a .orig expression';
                     const errorType = 'Semantic Error';
 
                     const string = view.state.doc.line(line).text;
                     const start = string.search(/\S/);
                     const end = string.length;
-                    console.log(end);
+                    // console.log(end);
 
                     const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                     assemblerErrors.push({line: line, errors: [errorObject]});
@@ -296,7 +296,7 @@ function compileAssembly (view) {
             }
             case 'operandExpressionLine': {
                 if (!hasOrigLine) {
-                    console.log('Assembly must start with a .orig expression on line ' + line);
+                    // console.log('Assembly must start with a .orig expression on line ' + line);
                     const errorMessage = 'Asssembly must start with a .orig expression';
                     const errorType = 'Semantic Error';
 
@@ -321,14 +321,14 @@ function compileAssembly (view) {
                     toInsert += result.binary + ' ' + (result.comment ? result.comment : '');
 
                 } else {
-                    console.log('Tried to calculate the label');
+                    // console.log('Tried to calculate the label');
                     // validate that there will be no issues with the label
                     // make sure the label exists
                     let label = result.operands.label.toLowerCase();
                     label = label.slice(-1) === ':' ? label.slice(0, -1) : label;
-                    console.log('Label is ' + label);
+                    // console.log('Label is ' + label);
                     if (!labelMap.has(label)) {
-                        console.log(`Label '${label}' does not exist on line ${line}`);
+                        // console.log(`Label '${label}' does not exist on line ${line}`);
                         const errorMessage = `Label '${label}' does not exist`;
                         const errorType = 'Semantic Error';
                         const start = result.operands.lastOperandStart - 1;
@@ -339,9 +339,9 @@ function compileAssembly (view) {
                     }
 
                     // make sure the offset won't be too large
-                    console.log(`${labelMap.get(label)} - ${lineStartValue + pc}`);
+                    // console.log(`${labelMap.get(label)} - ${lineStartValue + pc}`);
                     const offset = labelMap.get(label) - (lineStartValue + pc);
-                    console.log(offset);
+                    // console.log(offset);
                     const opcode = result.binary.slice(0, 4);
                     let binaryOffset;
 
@@ -356,7 +356,7 @@ function compileAssembly (view) {
                             // will clean up later
                             const offsetString = '#' + offset.toString();
                             if (validateDecimalWithinRange(offsetString, 9, 0)) {
-                                console.log('Cannot encode label as a 9 bit unsigned number on line ' + line);
+                                // console.log('Cannot encode label as a 9 bit unsigned number on line ' + line);
                                 const errorMessage = `Cannot encode label '${label}' as a 9 bit unsigned integer`;
                                 const errorType = 'Semantic Error';
                                 const start = result.operands.lastOperandStart - 1;
@@ -366,8 +366,8 @@ function compileAssembly (view) {
                                 continue;
                             }
                             binaryOffset = convertToBinaryString(offsetString, 'decimal', 9);
-                            console.log(offsetString);
-                            console.log(binaryOffset);
+                            // console.log(offsetString);
+                            // console.log(binaryOffset);
                             break;
                         }
                         // JSR has label offset of 11
@@ -375,7 +375,7 @@ function compileAssembly (view) {
                             // will clean up later
                             const offsetString = '#' + offset.toString();
                             if (validateDecimalWithinRange(offsetString, 11, 0)) {
-                                console.log('Cannot encode label as an 11 bit unsigned number on line ' + line);
+                                // console.log('Cannot encode label as an 11 bit unsigned number on line ' + line);
                                 const errorMessage = `Cannot encode label '${label}' as an 11 bit unsigned integer`;
                                 const errorType = 'Semantic Error';
                                 const start = result.operands.lastOperandStart - 1;
@@ -385,8 +385,8 @@ function compileAssembly (view) {
                                 continue;
                             }
                             binaryOffset = convertToBinaryString(offsetString, 'decimal', 11);
-                            console.log(offsetString);
-                            console.log(binaryOffset);
+                            // console.log(offsetString);
+                            // console.log(binaryOffset);
                             break;  
                         }         
                     }

@@ -29,7 +29,7 @@ const highlightExtension = StateField.define({
 
             // only work on the new lines
             tr.changes.iterChanges((oldFrom, oldTo, newFrom, newTo) => {
-                console.log(newFrom + ' - ' + newTo);
+                // console.log(newFrom + ' - ' + newTo);
                 const startLineNew = tr.state.doc.lineAt(newFrom).number;
                 const endLineNew = tr.state.doc.lineAt(newTo).number;
 
@@ -142,14 +142,14 @@ const highlightExtension = StateField.define({
             filterFrom = tr.state.doc.lineAt(filterFrom).from;
             filterTo = tr.state.doc.lineAt(filterTo).to;
 
-            console.log(`filterFrom: ${filterFrom} - filterTo: ${filterTo}`);
+            // console.log(`filterFrom: ${filterFrom} - filterTo: ${filterTo}`);
             
             return deco.update({
                 filter: (from, to, value) => {
-                    console.log(`From: ${from} - To: ${to} - Value: ${value ? tr.state.doc.toString().slice(from, to) : "deleted"}`);
+                    // console.log(`From: ${from} - To: ${to} - Value: ${value ? tr.state.doc.toString().slice(from, to) : "deleted"}`);
 
                     if ( uniqueAffectedLines.has(tr.state.doc.lineAt(from).number) || uniqueAffectedLines.has(tr.state.doc.lineAt(to).number) ) {
-                        console.log("Should get removed");
+                        // console.log("Should get removed");
                     }
                     return ( !(uniqueAffectedLines.has(tr.state.doc.lineAt(from).number) || uniqueAffectedLines.has(tr.state.doc.lineAt(to).number)) )
                 },

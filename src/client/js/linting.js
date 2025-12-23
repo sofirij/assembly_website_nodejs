@@ -32,7 +32,7 @@ function renderErrorMessage(message) {
 }
 
 function createDiagnosticList(view, errors) {
-    console.log('Creating the diagnostics list');
+    // console.log('Creating the diagnostics list');
     const diagnostics = [];
 
     errors.forEach(errorObject => {
@@ -52,7 +52,7 @@ function createDiagnosticList(view, errors) {
         });
     });
 
-    diagnostics.forEach(diagnostic => console.log(`${diagnostic.from} ${diagnostic.to} ${diagnostic.severity} ${diagnostic.message}`));
+    // diagnostics.forEach(diagnostic => console.log(`${diagnostic.from} ${diagnostic.to} ${diagnostic.severity} ${diagnostic.message}`));
 
     return diagnostics;
 }

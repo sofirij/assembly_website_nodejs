@@ -59,7 +59,7 @@ const assemblyView = new EditorView({
 const assembleButton = document.getElementById('assemble-button');
 
 assembleButton.addEventListener('click', () => {
-    console.log('Assemble button clicked');
+    // console.log('Assemble button clicked');
 
     binaryCodeObject = null;
     binaryLineNumbers = null;
