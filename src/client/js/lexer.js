@@ -28,7 +28,7 @@ const lexer = moo.compile({
     hexadecimal: { match: /0[xX][0-9a-fA-F]+(?![^ \t])/, value: s => s.toLowerCase() },
     endDirective: { match: /\.[eE][nN][dD](?![^ \t])/, value: s => s.toLowerCase() },
     origDirective: { match: /\.[oO][rR][iI][gG](?![^ \t])/, value: s => s.toLowerCase() },
-    fillDirective: { match: /\.[fF][iI][lL][lL](?![^ \t])/},
+    fillDirective: { match: /\.[fF][iI][lL][lL](?![^ \t])/, value: s => s.toLowerCase() },
     blkwDirective: { match: /\.[bB][lL][kK][wW](?![^ \t])/, value: s => s.toLowerCase() },
     stringzDirective: { match: /\.[sS][tT][rR][iI][nN][gG][zZ](?![^ \t])/, value: s => s.toLowerCase() },
     label: /[a-zA-Z][a-zA-Z0-9_]*:?(?![^ \t])/,

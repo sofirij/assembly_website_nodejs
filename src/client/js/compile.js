@@ -76,7 +76,7 @@ function compileAssembly (view) {
                     lastLineProcessed = line;
                 }
             } else {
-                lexer.reset(text);
+                // parser is ambiguous
 
                 let firstFunctionalToken = null;
                 let secondFunctionalToken = null;
@@ -357,11 +357,11 @@ function compileAssembly (view) {
                         let label = result.operands.label.toLowerCase();
                         label = label.slice(-1) === ':' ? label.slice(0, -1) : label;
                         if (!labelMap.has(label)) {
-                            // console.log(`Label '${label}' does not exist on line ${line}`);
+                            console.log(`Label '${label}' does not exist on line ${line}`);
                             const errorMessage = `Label '${label}' does not exist`;
                             const errorType = 'Semantic Error';
-                            const start = result.operands.lastOperandStart - 1;
-                            const end = result.operands.lastOperandEnd;
+                            const start = result.operands.labelStart - 1;
+                            const end = result.operands.labelEnd;
                             const errorObject = {type: errorType, message: errorMessage, start: start, end: end};
                             assemblerErrors.push({line: line, errors: [errorObject]})
                             continue;
