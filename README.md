@@ -43,8 +43,6 @@ This project is a web-based LC3 assembler built with Node.js, Express, and CodeM
 
 ## Upcoming Updates
 
-- Linting
 - Containerization (with Docker)
 - Deploying the backend online
 - Option to switch to a simulator to see how the program would be executed (still in dev)
-- Update binary code result structure to use a red-black tree
