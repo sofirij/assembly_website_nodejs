@@ -31,7 +31,7 @@ const lexer = moo.compile({
     fillDirective: { match: /\.[fF][iI][lL][lL](?![^ \t])/},
     blkwDirective: { match: /\.[bB][lL][kK][wW](?![^ \t])/, value: s => s.toLowerCase() },
     stringzDirective: { match: /\.[sS][tT][rR][iI][nN][gG][zZ](?![^ \t])/, value: s => s.toLowerCase() },
-    label: /[a-zA-Z][a-zA-Z0-9_]*:?/,
+    label: /[a-zA-Z][a-zA-Z0-9_]*:?(?![^ \t])/,
     error: /\S+/,
 });
 
