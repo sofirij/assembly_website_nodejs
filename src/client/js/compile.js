@@ -77,6 +77,7 @@ function compileAssembly (view) {
                 }
             } else {
                 // parser is ambiguous
+                lexer.reset(text);
 
                 let firstFunctionalToken = null;
                 let secondFunctionalToken = null;
