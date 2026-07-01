@@ -2,6 +2,8 @@
 
 This project is a web-based LC3 assembler built with Node.js, Express, and CodeMirror. It allows users to write LC3 assembly code in the browser, assemble it using a server side assembler.
 
+https://github.com/user-attachments/assets/fe606ee3-8d7a-4f26-b157-1130b982f235
+
 ## Features
 
 - **Assembly Editor:** Write LC3 assembly code with linting using CodeMirror.
